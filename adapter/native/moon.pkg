@@ -1,0 +1,13 @@
+import {
+  "yyyt0807/external-sort" @sort,
+  "moonbitlang/async/fs",
+  "moonbitlang/async/io",
+  "moonbitlang/core/encoding/utf8",
+  "moonbitlang/core/json",
+}
+
+import {
+  "moonbitlang/async",
+} for "test"
+
+supported_targets = "+native"
