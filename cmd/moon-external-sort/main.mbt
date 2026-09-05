@@ -5,6 +5,7 @@ extern "C" fn process_exit(code : Int) = "exit"
 priv enum Command {
   Sort(@native.FileSortOptions)
   Check(@native.FileCheckOptions)
+  Estimate(Int64, Int64, @sort.SortConfig)
   Resume(String, Bool)
   Help
   Version
@@ -36,6 +37,10 @@ async fn main {
         if !report.sorted {
           process_exit(8)
         }
+      }
+      Estimate(records, bytes, config) => {
+        let estimate = @sort.estimate_job(records, bytes, config)
+        @stdio.stdout.write(@sort.job_estimate_json(estimate) + "\n")
       }
       Resume(manifest, replace) => {
         let report = @native.resume_file(manifest, replace_output=replace)
@@ -99,8 +104,80 @@ fn parse_command(args : Array[String]) -> Result[Command, String] {
     "resume" => parse_resume(args)
     "sort" => parse_sort(args)
     "check" => parse_check(args)
+    "estimate" => parse_estimate(args)
     value => Err("unknown command: " + value)
   }
+}
+
+///|
+fn parse_estimate(args : Array[String]) -> Result[Command, String] {
+  if args.length() < 4 {
+    return Err("estimate requires INPUT_RECORDS and INPUT_BYTES")
+  }
+  let records = match parse_int64(args[2]) {
+    Ok(value) => value
+    Err(message) => return Err(message)
+  }
+  let bytes = match parse_int64(args[3]) {
+    Ok(value) => value
+    Err(message) => return Err(message)
+  }
+  if records < 0L || bytes < 0L {
+    return Err("estimate counts must not be negative")
+  }
+  let mut memory = 8 * 1024 * 1024
+  let mut max_open = 32
+  let mut max_record = 1024 * 1024
+  let mut key_kind = @sort.TextKey
+  let mut index = 4
+  while index < args.length() {
+    match args[index] {
+      "--memory-bytes" => {
+        guard index + 1 < args.length() else {
+          return Err("--memory-bytes requires a value")
+        }
+        memory = match parse_int(args[index + 1]) {
+          Ok(value) => value
+          Err(message) => return Err(message)
+        }
+        index += 2
+      }
+      "--max-open-runs" => {
+        guard index + 1 < args.length() else {
+          return Err("--max-open-runs requires a value")
+        }
+        max_open = match parse_int(args[index + 1]) {
+          Ok(value) => value
+          Err(message) => return Err(message)
+        }
+        index += 2
+      }
+      "--max-record-bytes" => {
+        guard index + 1 < args.length() else {
+          return Err("--max-record-bytes requires a value")
+        }
+        max_record = match parse_int(args[index + 1]) {
+          Ok(value) => value
+          Err(message) => return Err(message)
+        }
+        index += 2
+      }
+      "--numeric" => {
+        key_kind = @sort.IntegerKey
+        index += 1
+      }
+      value => return Err("unknown estimate option: " + value)
+    }
+  }
+  let config = @sort.SortConfig::new(
+    key_kind~,
+    memory_budget_bytes=memory,
+    max_open_runs=max_open,
+    max_record_bytes=max_record,
+  ) catch {
+    _ => return Err("invalid estimate resource budget")
+  }
+  Ok(Estimate(records, bytes, config))
 }
 
 ///|
@@ -411,6 +488,15 @@ fn parse_int(text : String) -> Result[Int, String] {
 }
 
 ///|
+fn parse_int64(text : String) -> Result[Int64, String] {
+  try @string.parse_int64(text) catch {
+    _ => Err("expected a 64-bit integer, got: " + text)
+  } noraise {
+    value => Ok(value)
+  }
+}
+
+///|
 async fn fail(code : String, message : String, status : Int) -> Unit {
   @stdio.stderr.write("MOON_EXTERNAL_SORT_" + code + ": " + message + "\n") catch {
     _ => ()
@@ -426,6 +512,7 @@ fn usage() -> String {
     #|Usage:
     #|  moon-external-sort sort INPUT OUTPUT [OPTIONS]
     #|  moon-external-sort check INPUT [KEY OPTIONS]
+    #|  moon-external-sort estimate INPUT_RECORDS INPUT_BYTES [OPTIONS]
     #|  moon-external-sort resume MANIFEST [--force]
     #|  moon-external-sort version
     #|
@@ -444,6 +531,7 @@ fn usage() -> String {
     #|  --force                replace an existing output atomically
     #|
     #|Check accepts --max-record-bytes and the same key/order selectors.
+    #|Estimate accepts memory, max-open, max-record and numeric options.
     #|
     #|Exit: 0 success, 2 usage/config, 3 existing path, 4 invalid input,
     #|      5 missing artifact, 6 corrupt recovery state, 7 host I/O,
