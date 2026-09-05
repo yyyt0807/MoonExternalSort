@@ -19,6 +19,18 @@ test "run codec round-trips signed integer keys" {
 }
 
 ///|
+test "run codec round-trips arbitrary precision decimal keys" {
+  let original : SortRecord = {
+    key: DecimalValue(parse_decimal_key("-9007199254740992.0000000000000001")),
+    input_position: 7L,
+    payload: "exact decimal",
+  }
+  let encoded = encode_run_record(original)
+  assert_true(encoded.contains("\"kind\":\"decimal\""))
+  assert_eq(decode_run_record(encoded), original)
+}
+
+///|
 test "run codec rejects negative input positions" {
   try
     ignore(

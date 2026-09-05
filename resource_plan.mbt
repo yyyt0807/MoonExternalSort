@@ -40,6 +40,7 @@ pub fn estimate_run_capacity(config : SortConfig) -> RunCapacityEstimate {
   let worst_case_record_bytes = match config.key_kind {
     TextKey => saturating_add_i64(saturating_mul_i64(payload, 2L), 32L)
     IntegerKey => saturating_add_i64(payload, 56L)
+    DecimalKey => saturating_add_i64(saturating_mul_i64(payload, 2L), 40L)
   }
   let records_per_run = maximum_i64(
     1L,
@@ -119,6 +120,11 @@ pub fn estimate_job(
       )
     IntegerKey =>
       saturating_add_i64(maximum_i64(average_payload_bytes, 1L), 56L)
+    DecimalKey =>
+      saturating_add_i64(
+        saturating_mul_i64(maximum_i64(average_payload_bytes, 1L), 2L),
+        40L,
+      )
   }
   let records_per_run = maximum_i64(
     1L,

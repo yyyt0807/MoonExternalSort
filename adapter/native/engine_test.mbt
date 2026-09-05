@@ -127,6 +127,50 @@ async test "CSV selector respects quoted delimiters and stable duplicate keys" {
 }
 
 ///|
+async test "native engine orders decimal keys without floating point loss" {
+  let root = "_build/external_sort_native_decimal"
+  if @fs.exists(root) {
+    @fs.rmdir(root, recursive=true)
+  }
+  @fs.mkdir(root, recursive=true)
+  let input = root + "/prices.tsv"
+  let output = root + "/prices.sorted.tsv"
+  @fs.write_file(
+    input,
+    "9007199254740992.0000000000000002\tsecond\n" +
+    "-0.01\tnegative\n" +
+    "9007199254740992.0000000000000001\tfirst\n" +
+    "1.20\tequal-a\n" +
+    "1.2\tequal-b\n",
+    create_mode=CreateOrTruncate,
+  )
+  ignore(
+    sort_file({
+      input_path: input,
+      output_path: output,
+      work_directory: root + "/work",
+      config: @sort.SortConfig::new(
+        key_kind=@sort.DecimalKey,
+        memory_budget_bytes=512,
+        max_open_runs=2,
+        max_record_bytes=128,
+      ),
+      selector: @sort.DelimitedField(index=0, delimiter="\t"),
+      replace_output: false,
+    }),
+  )
+  assert_eq(
+    @fs.read_file(output).text(),
+    "-0.01\tnegative\n" +
+    "1.20\tequal-a\n" +
+    "1.2\tequal-b\n" +
+    "9007199254740992.0000000000000001\tfirst\n" +
+    "9007199254740992.0000000000000002\tsecond\n",
+  )
+  @fs.rmdir(root, recursive=true)
+}
+
+///|
 async test "resume consumes only Runs committed by the manifest" {
   let root = "_build/external_sort_native_resume"
   if @fs.exists(root) {

@@ -35,3 +35,29 @@ test "manifest rejects invalid merge fan-in" {
     _ => fail("expected InvalidManifest")
   }
 }
+
+///|
+test "manifest preserves decimal key jobs and CSV selectors" {
+  let original : JobManifest = {
+    phase: RunsReady,
+    input_path: "prices.csv",
+    output_path: "prices.sorted.csv",
+    work_directory: ".prices-work",
+    config: SortConfig::new(
+      key_kind=DecimalKey,
+      memory_budget_bytes=2048,
+      max_open_runs=4,
+      max_record_bytes=256,
+    ),
+    selector: CsvField(index=2, delimiter=';'),
+    input_records: 40L,
+    initial_run_count: 3,
+    merge_pass: 0,
+    runs: [
+      { path: "r0.run", record_count: 15L, },
+      { path: "r1.run", record_count: 15L, },
+      { path: "r2.run", record_count: 10L, },
+    ],
+  }
+  assert_eq(decode_manifest(encode_manifest(original)), original)
+}

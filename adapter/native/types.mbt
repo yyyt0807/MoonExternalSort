@@ -123,5 +123,9 @@ fn sort_value_json(value : @sort.SortValue) -> String {
       "{\"kind\":\"text\",\"value\":" + Json::string(text).stringify() + "}"
     @sort.IntegerValue(integer) =>
       "{\"kind\":\"integer\",\"value\":" + integer.to_string() + "}"
+    @sort.DecimalValue(decimal) =>
+      "{\"kind\":\"decimal\",\"value\":" +
+      Json::string(decimal.to_canonical_string()).stringify() +
+      "}"
   }
 }

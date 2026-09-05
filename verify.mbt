@@ -118,7 +118,12 @@ pub fn compare_sort_values(left : SortValue, right : SortValue) -> Int {
   match (left, right) {
     (TextValue(a), TextValue(b)) => a.compare(b)
     (IntegerValue(a), IntegerValue(b)) => a.compare(b)
+    (DecimalValue(a), DecimalValue(b)) => compare_decimal_keys(a, b)
     (TextValue(_), IntegerValue(_)) => -1
+    (TextValue(_), DecimalValue(_)) => -1
     (IntegerValue(_), TextValue(_)) => 1
+    (IntegerValue(_), DecimalValue(_)) => -1
+    (DecimalValue(_), TextValue(_)) => 1
+    (DecimalValue(_), IntegerValue(_)) => 1
   }
 }

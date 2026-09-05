@@ -97,6 +97,7 @@ pub fn decode_manifest(text : String) -> JobManifest raise SortError {
     key_kind=match manifest_string(fields, "keyKind") {
       "text" => TextKey
       "integer" => IntegerKey
+      "decimal" => DecimalKey
       _ => raise InvalidManifest("unknown keyKind")
     },
     memory_budget_bytes=manifest_int(fields, "memoryBudgetBytes"),
@@ -220,6 +221,7 @@ fn key_kind_name(kind : KeyKind) -> String {
   match kind {
     TextKey => "text"
     IntegerKey => "integer"
+    DecimalKey => "decimal"
   }
 }
 

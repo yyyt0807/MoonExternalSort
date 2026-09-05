@@ -166,6 +166,10 @@ fn parse_estimate(args : Array[String]) -> Result[Command, String] {
         key_kind = @sort.IntegerKey
         index += 1
       }
+      "--decimal" => {
+        key_kind = @sort.DecimalKey
+        index += 1
+      }
       value => return Err("unknown estimate option: " + value)
     }
   }
@@ -210,6 +214,10 @@ fn parse_check(args : Array[String]) -> Result[Command, String] {
       }
       "--numeric" => {
         key_kind = @sort.IntegerKey
+        index += 1
+      }
+      "--decimal" => {
+        key_kind = @sort.DecimalKey
         index += 1
       }
       "--field-index" => {
@@ -377,6 +385,10 @@ fn parse_sort(args : Array[String]) -> Result[Command, String] {
         key_kind = @sort.IntegerKey
         index += 1
       }
+      "--decimal" => {
+        key_kind = @sort.DecimalKey
+        index += 1
+      }
       "--force" => {
         replace = true
         index += 1
@@ -522,6 +534,7 @@ fn usage() -> String {
     #|  --max-record-bytes N   reject larger input records (default 1048576)
     #|  --descending           reverse Sort Key order; equal keys stay stable
     #|  --numeric              parse selected keys as signed 64-bit integers
+    #|  --decimal              parse exact plain-decimal keys without floats
     #|  --field-index N        select zero-based TSV field
     #|  --delimiter TEXT       delimiter for --field-index; "tab" means TAB
     #|  --json-field NAME      select a top-level scalar JSONL field

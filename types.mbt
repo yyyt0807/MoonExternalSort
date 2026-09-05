@@ -10,6 +10,7 @@ pub(all) enum SortOrder {
 pub(all) enum KeyKind {
   TextKey
   IntegerKey
+  DecimalKey
 } derive(Debug, Eq)
 
 ///|
@@ -27,6 +28,7 @@ pub(all) enum KeySelector {
 pub(all) enum SortValue {
   TextValue(String)
   IntegerValue(Int64)
+  DecimalValue(DecimalKeyValue)
 } derive(Debug, Eq)
 
 ///|
@@ -124,6 +126,7 @@ pub fn parse_key(text : String, kind : KeyKind) -> SortValue raise SortError {
           _ => raise InvalidKey("not a signed 64-bit integer: " + text)
         },
       )
+    DecimalKey => DecimalValue(parse_decimal_key(text))
   }
 }
 
@@ -150,6 +153,7 @@ pub fn estimated_record_bytes(record : SortRecord) -> Int {
   let key_bytes = match record.key {
     TextValue(value) => value.length()
     IntegerValue(_) => 24
+    DecimalValue(value) => value.digits.length() + 8
   }
   record.payload.length() + key_bytes + 32
 }

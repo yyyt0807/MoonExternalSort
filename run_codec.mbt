@@ -6,6 +6,8 @@ pub fn encode_run_record(record : SortRecord) -> String {
   let (kind, key) = match record.key {
     TextValue(value) => ("text", Json::string(value).stringify())
     IntegerValue(value) => ("integer", value.to_string())
+    DecimalValue(value) =>
+      ("decimal", Json::string(value.to_canonical_string()).stringify())
   }
   "{" +
   "\"kind\":" +
@@ -35,6 +37,12 @@ pub fn decode_run_record(line : String) -> SortRecord raise SortError {
   let key = match kind {
     "text" => TextValue(required_string(fields, "key"))
     "integer" => IntegerValue(required_int64(fields, "key"))
+    "decimal" =>
+      DecimalValue(
+        parse_decimal_key(required_string(fields, "key")) catch {
+          _ => raise MalformedRun("invalid canonical decimal key")
+        },
+      )
     _ => raise MalformedRun("unknown key kind: " + kind)
   }
   let input_position = required_int64(fields, "position")
