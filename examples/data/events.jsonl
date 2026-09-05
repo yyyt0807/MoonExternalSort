@@ -1,0 +1,4 @@
+{"priority":2,"event":"normal"}
+{"priority":10,"event":"urgent-first"}
+{"priority":10,"event":"urgent-second"}
+{"priority":-1,"event":"background"}
