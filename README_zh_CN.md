@@ -11,6 +11,8 @@ MoonExternalSort 是使用 MoonBit 实现的稳定、有界内存外部排序与
 - 只有完整写入的 Run 才会进入原子提交的 Job Manifest；
 - Published Output 先写临时文件，再通过重命名一次性可见；
 - 空输入、空记录、CRLF、重复键、负整数键和多轮归并都有测试。
+- 支持带引号及双引号转义的单行 CSV 字段选择；
+- 支持流式有序性检查、稳定 Top-K 和运行前资源规划。
 
 `memory_budget_bytes` 约束生成 Run 时保留的记录。归并阶段的已解码记录头由
 `max_open_runs` 单独约束；文本键的保守记录数据上界为
@@ -50,6 +52,20 @@ moon run --target native cmd/moon-external-sort -- resume \
   OUTPUT.moon-sort-work/manifest.json
 ```
 
+检查已有输出而不改写文件：
+
+```sh
+moon run --target native cmd/moon-external-sort -- check \
+  _build/sorted.tsv --field-index 0 --numeric
+```
+
+预估一百万条、八千万载荷字节的作业：
+
+```sh
+moon run --target native cmd/moon-external-sort -- estimate \
+  1000000 80000000 --memory-bytes 8388608 --max-open-runs 32
+```
+
 ## 库接口
 
 便携核心提供：
@@ -60,6 +76,7 @@ moon run --target native cmd/moon-external-sort -- resume \
 - `plan_merge_pass`、`merge_pass_count`：受限 fan-in 规划；
 - `LineFramer`：按字节限制的 UTF-8 行边界构造器；
 - `JobManifest` 及其稳定 JSON 编解码；
+- `CsvDialect`、`SortednessVerifier`、`TopKSelector` 和 `estimate_job`；
 - `adapter/native`：文件 Run、原子清单、恢复和最终发布。
 
 完整说明参见 [API](docs/API.md)、[架构](docs/ARCHITECTURE.md)、[测试](docs/TESTING.md)、[安全边界](docs/SECURITY.md) 和 [生态对比](docs/ECOSYSTEM_COMPARISON.md)。

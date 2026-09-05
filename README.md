@@ -45,6 +45,31 @@ moon run --target native cmd/moon-external-sort -- sort \
   --json-field priority --numeric --descending --force
 ```
 
+Sort a quoted CSV field:
+
+```sh
+moon run --target native cmd/moon-external-sort -- sort \
+  examples/data/quoted.csv _build/quoted.sorted.csv \
+  --csv-field 0 --numeric
+```
+
+Check an existing file without rewriting it:
+
+```sh
+moon run --target native cmd/moon-external-sort -- check \
+  _build/sorted.tsv --field-index 0 --numeric
+```
+
+Estimate Runs, merge passes and minimum logical payload I/O:
+
+```sh
+moon run --target native cmd/moon-external-sort -- estimate \
+  1000000 80000000 --memory-bytes 8388608 --max-open-runs 32
+```
+
+The portable API also exposes `TopKSelector` when only the first K stable
+records are needed.
+
 Resume from the last committed state:
 
 ```sh

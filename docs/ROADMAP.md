@@ -7,6 +7,8 @@
 - Bounded line framing and Run construction.
 - Heap-based multi-pass merging under a file fan-in.
 - Atomic manifests, resumable committed merge passes and atomic output.
+- Quoted CSV selection and streaming sortedness verification.
+- Stable bounded Top-K selection and deterministic resource estimation.
 - Cross-target core tests and Native filesystem tests.
 
 ## Later, only with evidence of need

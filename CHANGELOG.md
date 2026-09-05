@@ -8,4 +8,7 @@
 - Add versioned Run and Job Manifest codecs.
 - Add Native file sorting, committed-pass recovery and atomic publication.
 - Add whole-record, delimited-field and JSONL-field selectors.
+- Add quoted CSV selection, streaming order checks and CLI diagnostics.
+- Add stable bounded Top-K selection.
+- Add Run, merge-pass and payload-I/O estimation.
 - Add strict cross-target and Native filesystem tests.

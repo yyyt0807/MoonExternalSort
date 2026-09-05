@@ -6,39 +6,83 @@ import {
 }
 
 // Values
+pub fn build_merge_schedule(Int64, Int) -> Array[MergePassEstimate] raise SortError
+
 pub fn compare_records(SortRecord, SortRecord, SortOrder) -> Int
+
+pub fn compare_sort_values(SortValue, SortValue) -> Int
 
 pub fn decode_manifest(String) -> JobManifest raise SortError
 
 pub fn decode_run_record(String) -> SortRecord raise SortError
 
+pub fn encode_csv_field(String, dialect? : CsvDialect) -> String
+
+pub fn encode_csv_record(Array[String], dialect? : CsvDialect) -> String
+
 pub fn encode_manifest(JobManifest) -> String
 
 pub fn encode_run_record(SortRecord) -> String
 
+pub fn estimate_job(Int64, Int64, SortConfig) -> JobEstimate raise SortError
+
+pub fn estimate_run_capacity(SortConfig) -> RunCapacityEstimate
+
 pub fn estimated_record_bytes(SortRecord) -> Int
+
+pub fn job_estimate_json(JobEstimate) -> String
 
 pub fn merge_pass_count(Int, Int) -> Int raise SortError
 
 pub fn merge_sorted_runs(Array[Array[SortRecord]], SortOrder) -> Array[SortRecord]
 
+pub fn parse_csv_record(String, dialect? : CsvDialect) -> Array[String] raise CsvError
+
 pub fn parse_key(String, KeyKind) -> SortValue raise SortError
 
 pub fn plan_merge_pass(Int, Int) -> Array[MergeGroup] raise SortError
 
+pub fn select_csv_field(String, Int, dialect? : CsvDialect) -> String raise CsvError
+
 pub fn validate_selector(KeySelector) -> Unit raise SortError
 
 // Errors
+pub(all) suberror CsvError {
+  InvalidDialect(String)
+  MalformedCsv(offset~ : Int, message~ : String)
+  CsvFieldMissing(index~ : Int, available~ : Int)
+} derive(Eq, @debug.Debug)
+
 pub(all) suberror SortError {
   InvalidConfig(String)
   InvalidKey(String)
   RecordTooLarge(actual~ : Int, limit~ : Int)
+  SelectionBudgetExceeded(required~ : Int, limit~ : Int)
   SequenceExhausted
   MalformedRun(String)
   InvalidManifest(String)
 } derive(Eq, @debug.Debug)
 
 // Types and methods
+pub(all) struct CsvDialect {
+  delimiter : Char
+  quote : Char
+} derive(Eq, @debug.Debug)
+pub fn CsvDialect::new(delimiter? : Char, quote? : Char) -> Self raise CsvError
+
+pub(all) struct JobEstimate {
+  input_records : Int64
+  input_payload_bytes : Int64
+  average_payload_bytes : Int64
+  records_per_run : Int64
+  initial_runs : Int64
+  merge_passes : Int
+  minimum_payload_io_bytes : Int64
+  peak_payload_generation_bytes : Int64
+  schedule : Array[MergePassEstimate]
+  saturated : Bool
+} derive(Eq, @debug.Debug)
+
 pub(all) struct JobManifest {
   phase : JobPhase
   input_path : String
@@ -66,6 +110,7 @@ pub(all) enum KeyKind {
 pub(all) enum KeySelector {
   WholeRecord
   DelimitedField(index~ : Int, delimiter~ : String)
+  CsvField(index~ : Int, delimiter~ : Char)
   JsonField(String)
 } derive(Eq, @debug.Debug)
 
@@ -84,6 +129,20 @@ pub(all) struct MergeGroup {
   end : Int
 } derive(Eq, @debug.Debug)
 
+pub(all) struct MergePassEstimate {
+  pass : Int
+  input_runs : Int64
+  output_runs : Int64
+  largest_group : Int
+} derive(Eq, @debug.Debug)
+
+pub(all) struct OrderViolation {
+  previous_index : Int64
+  current_index : Int64
+  previous_key : SortValue
+  current_key : SortValue
+} derive(Eq, @debug.Debug)
+
 pub struct RunBuilder {
   config : SortConfig
   mut records : Array[SortRecord]
@@ -95,6 +154,13 @@ pub fn RunBuilder::new(SortConfig, start_position? : Int64) -> Self raise SortEr
 pub fn RunBuilder::next_position(Self) -> Int64
 pub fn RunBuilder::push(Self, String, String) -> Array[SortRecord]? raise SortError
 pub fn RunBuilder::retained_bytes(Self) -> Int
+
+pub(all) struct RunCapacityEstimate {
+  worst_case_record_bytes : Int64
+  records_per_run : Int64
+  conservative_merge_head_bytes : Int64
+  merge_heads_fit_run_budget : Bool
+} derive(Eq, @debug.Debug)
 
 pub(all) struct RunDescriptor {
   path : String
@@ -125,6 +191,49 @@ pub(all) enum SortValue {
   TextValue(String)
   IntegerValue(Int64)
 } derive(Eq, @debug.Debug)
+
+pub struct SortednessVerifier {
+  config : SortConfig
+  mut previous : SortRecord?
+  mut records : Int64
+  mut equal_adjacent_keys : Int64
+  mut violation : OrderViolation?
+}
+pub fn SortednessVerifier::new(SortConfig) -> Self
+pub fn SortednessVerifier::push(Self, String, String) -> Unit raise SortError
+pub fn SortednessVerifier::push_record(Self, SortRecord) -> Unit
+pub fn SortednessVerifier::report(Self) -> VerificationReport
+
+pub(all) struct TopKResult {
+  records : Array[SortRecord]
+  input_records : Int64
+  discarded_records : Int64
+  retained_bytes : Int
+} derive(Eq, @debug.Debug)
+
+pub struct TopKSelector {
+  config : SortConfig
+  limit : Int
+  heap : Array[SortRecord]
+  mut retained_bytes : Int
+  mut input_records : Int64
+  mut discarded_records : Int64
+  mut next_position : Int64
+  mut finished : Bool
+}
+pub fn TopKSelector::finish(Self) -> TopKResult raise SortError
+pub fn TopKSelector::new(SortConfig, Int, start_position? : Int64) -> Self raise SortError
+pub fn TopKSelector::observed_count(Self) -> Int64
+pub fn TopKSelector::push(Self, String, String) -> Unit raise SortError
+pub fn TopKSelector::retained_bytes(Self) -> Int
+pub fn TopKSelector::retained_count(Self) -> Int
+
+pub(all) struct VerificationReport {
+  records : Int64
+  equal_adjacent_keys : Int64
+  violation : OrderViolation?
+} derive(Eq, @debug.Debug)
+pub fn VerificationReport::is_sorted(Self) -> Bool
 
 // Type aliases
 
