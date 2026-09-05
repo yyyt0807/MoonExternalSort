@@ -54,6 +54,7 @@ pub(all) suberror SortError {
   InvalidConfig(String)
   InvalidKey(String)
   RecordTooLarge(actual~ : Int, limit~ : Int)
+  SelectionBudgetExceeded(required~ : Int, limit~ : Int)
   SequenceExhausted
   MalformedRun(String)
   InvalidManifest(String)

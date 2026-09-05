@@ -59,6 +59,15 @@ async fn main {
         limit.to_string(),
         4,
       )
+    @sort.SelectionBudgetExceeded(required~, limit~) =>
+      fail(
+        "SELECTION_BUDGET_EXCEEDED",
+        "Top-K selection requires " +
+        required.to_string() +
+        " bytes; limit is " +
+        limit.to_string(),
+        4,
+      )
     @sort.SequenceExhausted =>
       fail("SEQUENCE_EXHAUSTED", "input position space exhausted", 4)
     @sort.MalformedRun(message) => fail("MALFORMED_RUN", message, 6)
