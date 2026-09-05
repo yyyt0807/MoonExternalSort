@@ -133,12 +133,7 @@ pub fn compare_records(
   right : SortRecord,
   order : SortOrder,
 ) -> Int {
-  let key_order = match (left.key, right.key) {
-    (TextValue(a), TextValue(b)) => a.compare(b)
-    (IntegerValue(a), IntegerValue(b)) => a.compare(b)
-    (TextValue(_), IntegerValue(_)) => -1
-    (IntegerValue(_), TextValue(_)) => 1
-  }
+  let key_order = compare_sort_values(left.key, right.key)
   if key_order == 0 {
     left.input_position.compare(right.input_position)
   } else if order == Ascending {

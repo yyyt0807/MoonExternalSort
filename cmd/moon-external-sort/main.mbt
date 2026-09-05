@@ -4,6 +4,7 @@ extern "C" fn process_exit(code : Int) = "exit"
 ///|
 priv enum Command {
   Sort(@native.FileSortOptions)
+  Check(@native.FileCheckOptions)
   Resume(String, Bool)
   Help
   Version
@@ -28,6 +29,13 @@ async fn main {
       Sort(options) => {
         let report = @native.sort_file(options)
         @stdio.stdout.write(@native.report_json(report) + "\n")
+      }
+      Check(options) => {
+        let report = @native.check_file(options)
+        @stdio.stdout.write(@native.check_report_json(report) + "\n")
+        if !report.sorted {
+          process_exit(8)
+        }
       }
       Resume(manifest, replace) => {
         let report = @native.resume_file(manifest, replace_output=replace)
@@ -81,8 +89,130 @@ fn parse_command(args : Array[String]) -> Result[Command, String] {
     "version" | "--version" | "-V" => Ok(Version)
     "resume" => parse_resume(args)
     "sort" => parse_sort(args)
+    "check" => parse_check(args)
     value => Err("unknown command: " + value)
   }
+}
+
+///|
+fn parse_check(args : Array[String]) -> Result[Command, String] {
+  if args.length() < 3 {
+    return Err("check requires INPUT")
+  }
+  let input = args[2]
+  let mut max_record = 1024 * 1024
+  let mut order = @sort.Ascending
+  let mut key_kind = @sort.TextKey
+  let mut selector = @sort.WholeRecord
+  let mut selector_set = false
+  let mut index = 3
+  while index < args.length() {
+    match args[index] {
+      "--max-record-bytes" => {
+        guard index + 1 < args.length() else {
+          return Err("--max-record-bytes requires a value")
+        }
+        max_record = match parse_int(args[index + 1]) {
+          Ok(value) => value
+          Err(message) => return Err(message)
+        }
+        index += 2
+      }
+      "--descending" => {
+        order = @sort.Descending
+        index += 1
+      }
+      "--numeric" => {
+        key_kind = @sort.IntegerKey
+        index += 1
+      }
+      "--field-index" => {
+        if selector_set {
+          return Err("only one key selector may be specified")
+        }
+        guard index + 1 < args.length() else {
+          return Err("--field-index requires a zero-based index")
+        }
+        let field_index = match parse_int(args[index + 1]) {
+          Ok(value) => value
+          Err(message) => return Err(message)
+        }
+        selector = @sort.DelimitedField(index=field_index, delimiter="\t")
+        selector_set = true
+        index += 2
+      }
+      "--delimiter" => {
+        guard index + 1 < args.length() else {
+          return Err("--delimiter requires a value")
+        }
+        guard selector is @sort.DelimitedField(index=field_index, ..) else {
+          return Err("--delimiter requires --field-index first")
+        }
+        let delimiter = if args[index + 1] == "tab" {
+          "\t"
+        } else {
+          args[index + 1]
+        }
+        selector = @sort.DelimitedField(index=field_index, delimiter~)
+        index += 2
+      }
+      "--json-field" => {
+        if selector_set {
+          return Err("only one key selector may be specified")
+        }
+        guard index + 1 < args.length() else {
+          return Err("--json-field requires a top-level field name")
+        }
+        selector = @sort.JsonField(args[index + 1])
+        selector_set = true
+        index += 2
+      }
+      "--csv-field" => {
+        if selector_set {
+          return Err("only one key selector may be specified")
+        }
+        guard index + 1 < args.length() else {
+          return Err("--csv-field requires a zero-based index")
+        }
+        let field_index = match parse_int(args[index + 1]) {
+          Ok(value) => value
+          Err(message) => return Err(message)
+        }
+        selector = @sort.CsvField(index=field_index, delimiter=',')
+        selector_set = true
+        index += 2
+      }
+      "--csv-delimiter" => {
+        guard index + 1 < args.length() else {
+          return Err("--csv-delimiter requires one character")
+        }
+        guard selector is @sort.CsvField(index=field_index, ..) else {
+          return Err("--csv-delimiter requires --csv-field first")
+        }
+        let chars = args[index + 1].to_array()
+        if chars.length() != 1 {
+          return Err("--csv-delimiter requires exactly one character")
+        }
+        selector = @sort.CsvField(index=field_index, delimiter=chars[0])
+        index += 2
+      }
+      value => return Err("unknown check option: " + value)
+    }
+  }
+  let memory = if max_record < 256 { 256 } else { max_record }
+  let config = @sort.SortConfig::new(
+    order~,
+    key_kind~,
+    memory_budget_bytes=memory,
+    max_open_runs=2,
+    max_record_bytes=max_record,
+  ) catch {
+    _ => return Err("invalid check record budget")
+  }
+  @sort.validate_selector(selector) catch {
+    _ => return Err("invalid key selector")
+  }
+  Ok(Check({ input_path: input, config, selector, }))
 }
 
 ///|
@@ -286,6 +416,7 @@ fn usage() -> String {
     #|
     #|Usage:
     #|  moon-external-sort sort INPUT OUTPUT [OPTIONS]
+    #|  moon-external-sort check INPUT [KEY OPTIONS]
     #|  moon-external-sort resume MANIFEST [--force]
     #|  moon-external-sort version
     #|
@@ -303,8 +434,11 @@ fn usage() -> String {
     #|  --work-dir PATH        recovery workspace (default OUTPUT.moon-sort-work)
     #|  --force                replace an existing output atomically
     #|
+    #|Check accepts --max-record-bytes and the same key/order selectors.
+    #|
     #|Exit: 0 success, 2 usage/config, 3 existing path, 4 invalid input,
-    #|      5 missing artifact, 6 corrupt recovery state, 7 host I/O.
+    #|      5 missing artifact, 6 corrupt recovery state, 7 host I/O,
+    #|      8 input is not sorted.
     #|
   )
 }
