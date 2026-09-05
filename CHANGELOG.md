@@ -11,4 +11,6 @@
 - Add quoted CSV selection, streaming order checks and CLI diagnostics.
 - Add stable bounded Top-K selection.
 - Add Run, merge-pass and payload-I/O estimation.
+- Add exact arbitrary-precision plain-decimal sort keys.
+- Add constant-space adjacent-key group statistics.
 - Add strict cross-target and Native filesystem tests.

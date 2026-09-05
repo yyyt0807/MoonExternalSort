@@ -9,6 +9,7 @@
 - Atomic manifests, resumable committed merge passes and atomic output.
 - Quoted CSV selection and streaming sortedness verification.
 - Stable bounded Top-K selection and deterministic resource estimation.
+- Exact arbitrary-precision decimal keys and streaming group statistics.
 - Cross-target core tests and Native filesystem tests.
 
 ## Later, only with evidence of need
@@ -16,7 +17,7 @@
 - Cryptographic Run digests and input identity binding.
 - Replacement-selection Run generation.
 - Loser-tree merge benchmark against the binary heap.
-- Locale-independent decimal and timestamp key types.
+- Locale-independent timestamp key types.
 - Explicit cancellation and cleanup commands.
 - Streaming standard input for non-recoverable jobs.
 

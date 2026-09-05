@@ -67,8 +67,10 @@ moon run --target native cmd/moon-external-sort -- estimate \
   1000000 80000000 --memory-bytes 8388608 --max-open-runs 32
 ```
 
-The portable API also exposes `TopKSelector` when only the first K stable
-records are needed.
+Use `--decimal` for exact plain-decimal keys whose precision exceeds `Int64` or
+IEEE-754. The portable API also exposes `TopKSelector` when only the first K
+stable records are needed and `SortedGroupCounter` for constant-space duplicate
+group statistics.
 
 Resume from the last committed state:
 

@@ -16,6 +16,8 @@
 - `SortednessVerifier`: constant-space order and stability diagnostics.
 - `TopKSelector`: stable bounded-memory heap selection.
 - `estimate_job` / `build_merge_schedule`: deterministic preflight planning.
+- `DecimalKeyValue`: exact arbitrary-precision decimal comparison.
+- `SortedGroupCounter`: constant-space duplicate-group statistics.
 
 ## Native adapter
 
@@ -28,5 +30,7 @@ Selectors are `WholeRecord`, `DelimitedField`, `CsvField`, and `JsonField`.
 `CsvField` supports quoting and doubled quotes within one physical line;
 multiline CSV is outside v0.1. JSONL fields must be top-level scalar strings,
 numbers, or booleans. `IntegerKey` parses selected text as signed 64-bit integer.
+`DecimalKey` accepts signed plain decimals and compares them exactly; exponent
+notation is intentionally outside v0.1.
 
 Outputs contain the original record payload, one record per LF-terminated line. CR in CRLF input is removed. A final unterminated input line is accepted; a trailing LF does not invent an extra record.

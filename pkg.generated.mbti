@@ -8,6 +8,8 @@ import {
 // Values
 pub fn build_merge_schedule(Int64, Int) -> Array[MergePassEstimate] raise SortError
 
+pub fn compare_decimal_keys(DecimalKeyValue, DecimalKeyValue) -> Int
+
 pub fn compare_records(SortRecord, SortRecord, SortOrder) -> Int
 
 pub fn compare_sort_values(SortValue, SortValue) -> Int
@@ -37,6 +39,8 @@ pub fn merge_pass_count(Int, Int) -> Int raise SortError
 pub fn merge_sorted_runs(Array[Array[SortRecord]], SortOrder) -> Array[SortRecord]
 
 pub fn parse_csv_record(String, dialect? : CsvDialect) -> Array[String] raise CsvError
+
+pub fn parse_decimal_key(String) -> DecimalKeyValue raise SortError
 
 pub fn parse_key(String, KeyKind) -> SortValue raise SortError
 
@@ -69,6 +73,27 @@ pub(all) struct CsvDialect {
   quote : Char
 } derive(Eq, @debug.Debug)
 pub fn CsvDialect::new(delimiter? : Char, quote? : Char) -> Self raise CsvError
+
+pub(all) struct DecimalKeyValue {
+  negative : Bool
+  digits : String
+  scale : Int
+} derive(Eq, @debug.Debug)
+pub fn DecimalKeyValue::to_canonical_string(Self) -> String
+
+pub(all) struct GroupStatistics {
+  records : Int64
+  distinct_keys : Int64
+  singleton_groups : Int64
+  repeated_groups : Int64
+  largest_group_records : Int64
+  first_key : SortValue?
+  last_key : SortValue?
+  verification : VerificationReport
+} derive(Eq, @debug.Debug)
+pub fn GroupStatistics::average_group_size(Self) -> Double
+pub fn GroupStatistics::duplicate_records(Self) -> Int64
+pub fn GroupStatistics::is_sorted(Self) -> Bool
 
 pub(all) struct JobEstimate {
   input_records : Int64
@@ -105,6 +130,7 @@ pub(all) enum JobPhase {
 pub(all) enum KeyKind {
   TextKey
   IntegerKey
+  DecimalKey
 } derive(Eq, @debug.Debug)
 
 pub(all) enum KeySelector {
@@ -190,7 +216,28 @@ pub(all) struct SortRecord {
 pub(all) enum SortValue {
   TextValue(String)
   IntegerValue(Int64)
+  DecimalValue(DecimalKeyValue)
 } derive(Eq, @debug.Debug)
+
+pub struct SortedGroupCounter {
+  config : SortConfig
+  verifier : SortednessVerifier
+  mut previous_key : SortValue?
+  mut first_key : SortValue?
+  mut last_key : SortValue?
+  mut records : Int64
+  mut distinct_keys : Int64
+  mut singleton_groups : Int64
+  mut repeated_groups : Int64
+  mut current_group_records : Int64
+  mut largest_group_records : Int64
+  mut next_position : Int64
+  mut finished : Bool
+}
+pub fn SortedGroupCounter::finish(Self) -> GroupStatistics raise SortError
+pub fn SortedGroupCounter::new(SortConfig, start_position? : Int64) -> Self raise SortError
+pub fn SortedGroupCounter::push(Self, String, String) -> Unit raise SortError
+pub fn SortedGroupCounter::push_record(Self, SortRecord) -> Unit raise SortError
 
 pub struct SortednessVerifier {
   config : SortConfig
