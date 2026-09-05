@@ -159,6 +159,12 @@ fn encode_selector(selector : KeySelector) -> String {
       ",\"delimiter\":" +
       json_text(delimiter) +
       "}"
+    CsvField(index~, delimiter~) =>
+      "{\"kind\":\"csv\",\"index\":" +
+      index.to_string() +
+      ",\"delimiter\":" +
+      json_text(delimiter.to_string()) +
+      "}"
     JsonField(name) => "{\"kind\":\"json\",\"name\":" + json_text(name) + "}"
   }
 }
@@ -175,6 +181,13 @@ fn decode_selector(value : Json) -> KeySelector raise SortError {
         index=manifest_int(fields, "index"),
         delimiter=manifest_string(fields, "delimiter"),
       )
+    "csv" => {
+      let chars = manifest_string(fields, "delimiter").to_array()
+      if chars.length() != 1 {
+        raise InvalidManifest("CSV delimiter must be one character")
+      }
+      CsvField(index=manifest_int(fields, "index"), delimiter=chars[0])
+    }
     "json" => JsonField(manifest_string(fields, "name"))
     _ => raise InvalidManifest("unknown selector kind")
   }

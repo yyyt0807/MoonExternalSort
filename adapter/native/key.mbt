@@ -28,6 +28,25 @@ fn extract_key(
         "record does not contain delimited field " + index.to_string(),
       )
     }
+    @sort.CsvField(index~, delimiter~) =>
+      @sort.select_csv_field(
+        line,
+        index,
+        dialect=@sort.CsvDialect::new(delimiter~),
+      ) catch {
+        @sort.CsvFieldMissing(index~, available~) =>
+          raise InvalidInput(
+            "CSV record has " +
+            available.to_string() +
+            " fields; requested field " +
+            index.to_string(),
+          )
+        @sort.MalformedCsv(offset~, message~) =>
+          raise InvalidInput(
+            "invalid CSV record at byte " + offset.to_string() + ": " + message,
+          )
+        @sort.InvalidDialect(message) => raise InvalidInput(message)
+      }
     @sort.JsonField(name) => {
       let value = @json.parse(line) catch {
         error =>

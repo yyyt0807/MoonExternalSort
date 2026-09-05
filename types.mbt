@@ -17,6 +17,7 @@ pub(all) enum KeyKind {
 pub(all) enum KeySelector {
   WholeRecord
   DelimitedField(index~ : Int, delimiter~ : String)
+  CsvField(index~ : Int, delimiter~ : Char)
   JsonField(String)
 } derive(Debug, Eq)
 
@@ -69,6 +70,15 @@ pub fn validate_selector(selector : KeySelector) -> Unit raise SortError {
       }
       if delimiter == "" {
         raise InvalidConfig("delimiter must not be empty")
+      }
+    }
+    CsvField(index~, delimiter~) => {
+      if index < 0 {
+        raise InvalidConfig("CSV field index must not be negative")
+      }
+      let _dialect = CsvDialect::new(delimiter~) catch {
+        InvalidDialect(message) => raise InvalidConfig(message)
+        _ => raise InvalidConfig("invalid CSV dialect")
       }
     }
     JsonField(name) =>

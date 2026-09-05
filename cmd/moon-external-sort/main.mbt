@@ -55,6 +55,18 @@ async fn main {
       fail("SEQUENCE_EXHAUSTED", "input position space exhausted", 4)
     @sort.MalformedRun(message) => fail("MALFORMED_RUN", message, 6)
     @sort.InvalidManifest(message) => fail("INVALID_MANIFEST", message, 6)
+    @sort.InvalidDialect(message) => fail("INVALID_CSV_DIALECT", message, 4)
+    @sort.MalformedCsv(offset~, message~) =>
+      fail("MALFORMED_CSV", "byte " + offset.to_string() + ": " + message, 4)
+    @sort.CsvFieldMissing(index~, available~) =>
+      fail(
+        "CSV_FIELD_MISSING",
+        "requested " +
+        index.to_string() +
+        ", available " +
+        available.to_string(),
+        4,
+      )
     error => fail("IO", error.to_string(), 7)
   }
 }
@@ -179,6 +191,35 @@ fn parse_sort(args : Array[String]) -> Result[Command, String] {
         selector_set = true
         index += 2
       }
+      "--csv-field" => {
+        if selector_set {
+          return Err("only one key selector may be specified")
+        }
+        guard index + 1 < args.length() else {
+          return Err("--csv-field requires a zero-based index")
+        }
+        let field_index = match parse_int(args[index + 1]) {
+          Ok(value) => value
+          Err(message) => return Err(message)
+        }
+        selector = @sort.CsvField(index=field_index, delimiter=',')
+        selector_set = true
+        index += 2
+      }
+      "--csv-delimiter" => {
+        guard index + 1 < args.length() else {
+          return Err("--csv-delimiter requires one character")
+        }
+        guard selector is @sort.CsvField(index=field_index, ..) else {
+          return Err("--csv-delimiter requires --csv-field first")
+        }
+        let chars = args[index + 1].to_array()
+        if chars.length() != 1 {
+          return Err("--csv-delimiter requires exactly one character")
+        }
+        selector = @sort.CsvField(index=field_index, delimiter=chars[0])
+        index += 2
+      }
       "--delimiter" => {
         guard index + 1 < args.length() else {
           return Err("--delimiter requires a value")
@@ -257,6 +298,8 @@ fn usage() -> String {
     #|  --field-index N        select zero-based TSV field
     #|  --delimiter TEXT       delimiter for --field-index; "tab" means TAB
     #|  --json-field NAME      select a top-level scalar JSONL field
+    #|  --csv-field N          select zero-based quoted CSV field
+    #|  --csv-delimiter CHAR   set CSV delimiter after --csv-field
     #|  --work-dir PATH        recovery workspace (default OUTPUT.moon-sort-work)
     #|  --force                replace an existing output atomically
     #|

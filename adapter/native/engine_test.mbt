@@ -86,6 +86,47 @@ async test "JSONL scalar selector supports descending signed integer keys" {
 }
 
 ///|
+async test "CSV selector respects quoted delimiters and stable duplicate keys" {
+  let root = "_build/external_sort_native_csv"
+  if @fs.exists(root) {
+    @fs.rmdir(root, recursive=true)
+  }
+  @fs.mkdir(root, recursive=true)
+  let input = root + "/input.csv"
+  let output = root + "/output.csv"
+  @fs.write_file(
+    input,
+    "3,plain,third\n" +
+    "1,\"quoted,value\",first-a\n" +
+    "1,\"say \"\"hello\"\"\",first-b\n" +
+    "2,middle,second\n",
+    create_mode=CreateOrTruncate,
+  )
+  let report = sort_file({
+    input_path: input,
+    output_path: output,
+    work_directory: root + "/work",
+    config: @sort.SortConfig::new(
+      key_kind=@sort.IntegerKey,
+      memory_budget_bytes=512,
+      max_open_runs=2,
+      max_record_bytes=128,
+    ),
+    selector: @sort.CsvField(index=0, delimiter=','),
+    replace_output: false,
+  })
+  assert_eq(report.input_records, 4L)
+  assert_eq(
+    @fs.read_file(output).text(),
+    "1,\"quoted,value\",first-a\n" +
+    "1,\"say \"\"hello\"\"\",first-b\n" +
+    "2,middle,second\n" +
+    "3,plain,third\n",
+  )
+  @fs.rmdir(root, recursive=true)
+}
+
+///|
 async test "resume consumes only Runs committed by the manifest" {
   let root = "_build/external_sort_native_resume"
   if @fs.exists(root) {
