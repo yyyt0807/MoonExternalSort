@@ -1,0 +1,63 @@
+name: Check and Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Install MoonBit on Unix
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
+          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
+
+      - name: Install MoonBit on Windows
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
+          irm https://cli.moonbitlang.com/install/powershell.ps1 | iex
+          "$env:USERPROFILE\.moon\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
+
+      - name: Resolve dependencies
+        run: |
+          moon version --all
+          moon update
+
+      - name: Check all backends
+        run: moon check --target all --deny-warn
+
+      - name: Test all backends
+        run: moon test --target all --deny-warn
+
+      - name: Verify formatting and generated interfaces
+        shell: bash
+        run: |
+          moon fmt --check
+          moon info
+          git diff --exit-code
+
+      - name: Run portable example
+        run: moon run examples/library-demo
+
+      - name: Run native CLI smoke test
+        shell: bash
+        run: |
+          moon run --target native cmd/moon-external-sort -- sort examples/data/records.tsv _build/sorted.tsv --field-index 0 --numeric --memory-bytes 512 --max-record-bytes 128
+          test -s _build/sorted.tsv

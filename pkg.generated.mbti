@@ -1,0 +1,131 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "yyyt0807/external-sort"
+
+import {
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn compare_records(SortRecord, SortRecord, SortOrder) -> Int
+
+pub fn decode_manifest(String) -> JobManifest raise SortError
+
+pub fn decode_run_record(String) -> SortRecord raise SortError
+
+pub fn encode_manifest(JobManifest) -> String
+
+pub fn encode_run_record(SortRecord) -> String
+
+pub fn estimated_record_bytes(SortRecord) -> Int
+
+pub fn merge_pass_count(Int, Int) -> Int raise SortError
+
+pub fn merge_sorted_runs(Array[Array[SortRecord]], SortOrder) -> Array[SortRecord]
+
+pub fn parse_key(String, KeyKind) -> SortValue raise SortError
+
+pub fn plan_merge_pass(Int, Int) -> Array[MergeGroup] raise SortError
+
+pub fn validate_selector(KeySelector) -> Unit raise SortError
+
+// Errors
+pub(all) suberror SortError {
+  InvalidConfig(String)
+  InvalidKey(String)
+  RecordTooLarge(actual~ : Int, limit~ : Int)
+  SequenceExhausted
+  MalformedRun(String)
+  InvalidManifest(String)
+} derive(Eq, @debug.Debug)
+
+// Types and methods
+pub(all) struct JobManifest {
+  phase : JobPhase
+  input_path : String
+  output_path : String
+  work_directory : String
+  config : SortConfig
+  selector : KeySelector
+  input_records : Int64
+  initial_run_count : Int
+  merge_pass : Int
+  runs : Array[RunDescriptor]
+} derive(Eq, @debug.Debug)
+
+pub(all) enum JobPhase {
+  RunsReady
+  Merging
+  Published
+} derive(Eq, @debug.Debug)
+
+pub(all) enum KeyKind {
+  TextKey
+  IntegerKey
+} derive(Eq, @debug.Debug)
+
+pub(all) enum KeySelector {
+  WholeRecord
+  DelimitedField(index~ : Int, delimiter~ : String)
+  JsonField(String)
+} derive(Eq, @debug.Debug)
+
+pub struct LineFramer {
+  max_record_bytes : Int
+  mut pending : Array[Byte]
+  mut finished : Bool
+}
+pub fn LineFramer::finish(Self) -> Bytes? raise SortError
+pub fn LineFramer::new(Int) -> Self raise SortError
+pub fn LineFramer::pending_bytes(Self) -> Int
+pub fn LineFramer::push(Self, Bytes) -> Array[Bytes] raise SortError
+
+pub(all) struct MergeGroup {
+  start : Int
+  end : Int
+} derive(Eq, @debug.Debug)
+
+pub struct RunBuilder {
+  config : SortConfig
+  mut records : Array[SortRecord]
+  mut retained_bytes : Int
+  mut next_position : Int64
+}
+pub fn RunBuilder::finish(Self) -> Array[SortRecord]?
+pub fn RunBuilder::new(SortConfig, start_position? : Int64) -> Self raise SortError
+pub fn RunBuilder::next_position(Self) -> Int64
+pub fn RunBuilder::push(Self, String, String) -> Array[SortRecord]? raise SortError
+pub fn RunBuilder::retained_bytes(Self) -> Int
+
+pub(all) struct RunDescriptor {
+  path : String
+  record_count : Int64
+} derive(Eq, @debug.Debug)
+
+pub(all) struct SortConfig {
+  order : SortOrder
+  key_kind : KeyKind
+  memory_budget_bytes : Int
+  max_open_runs : Int
+  max_record_bytes : Int
+} derive(Eq, @debug.Debug)
+pub fn SortConfig::new(order? : SortOrder, key_kind? : KeyKind, memory_budget_bytes? : Int, max_open_runs? : Int, max_record_bytes? : Int) -> Self raise SortError
+
+pub(all) enum SortOrder {
+  Ascending
+  Descending
+} derive(Eq, @debug.Debug)
+
+pub(all) struct SortRecord {
+  key : SortValue
+  input_position : Int64
+  payload : String
+} derive(Eq, @debug.Debug)
+
+pub(all) enum SortValue {
+  TextValue(String)
+  IntegerValue(Int64)
+} derive(Eq, @debug.Debug)
+
+// Type aliases
+
+// Traits
