@@ -1,5 +1,5 @@
 ///|
-extern "C" fn process_exit(code : Int) = "exit"
+extern "C" fn process_exit(code : Int32) = "exit"
 
 ///|
 priv enum Command {
@@ -491,7 +491,7 @@ fn parse_sort(args : Array[String]) -> Result[Command, String] {
 }
 
 ///|
-fn parse_int(text : String) -> Result[Int, String] {
+fn parse_int(text : String) -> Result[Int32, String] {
   try @string.parse_int(text) catch {
     _ => Err("expected an integer, got: " + text)
   } noraise {
@@ -509,7 +509,7 @@ fn parse_int64(text : String) -> Result[Int64, String] {
 }
 
 ///|
-async fn fail(code : String, message : String, status : Int) -> Unit {
+async fn fail(code : String, message : String, status : Int32) -> Unit {
   @stdio.stderr.write("MOON_EXTERNAL_SORT_" + code + ": " + message + "\n") catch {
     _ => ()
   }

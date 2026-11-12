@@ -1,11 +1,12 @@
 ///|
 /// Canonical arbitrary-precision decimal used only for ordering. `digits` has
 /// no leading zero, `scale` counts fractional digits, and zero is never negative.
+#derive(Debug, Eq)
 pub(all) struct DecimalKeyValue {
   negative : Bool
   digits : String
-  scale : Int
-} derive(Debug, Eq)
+  scale : Int32
+}
 
 ///|
 /// Parse a plain decimal without converting through floating point. Exponents,
@@ -78,7 +79,7 @@ pub fn parse_decimal_key(text : String) -> DecimalKeyValue raise SortError {
 pub fn compare_decimal_keys(
   left : DecimalKeyValue,
   right : DecimalKeyValue,
-) -> Int {
+) -> Int32 {
   if left.digits == "0" && right.digits == "0" {
     return 0
   }
@@ -97,7 +98,7 @@ pub fn compare_decimal_keys(
 fn compare_decimal_magnitude(
   left : DecimalKeyValue,
   right : DecimalKeyValue,
-) -> Int {
+) -> Int32 {
   let left_exponent = left.digits.length() - left.scale
   let right_exponent = right.digits.length() - right.scale
   if left_exponent < right_exponent {
@@ -164,3 +165,9 @@ pub fn DecimalKeyValue::to_canonical_string(self : DecimalKeyValue) -> String {
   }
   output.to_string()
 }
+
+///|
+pub extend DecimalKeyValue with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
+pub extend DecimalKeyValue with Eq::{not_equal, equal}

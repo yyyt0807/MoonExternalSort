@@ -1,7 +1,7 @@
 ///|
 test "capacity estimate distinguishes text and integer keys" {
-  let text = estimate_run_capacity(
-    SortConfig::new(
+  let text = @external-sort.estimate_run_capacity(
+    @external-sort.SortConfig::new(
       key_kind=TextKey,
       memory_budget_bytes=1024,
       max_open_runs=4,
@@ -12,8 +12,8 @@ test "capacity estimate distinguishes text and integer keys" {
   assert_eq(text.records_per_run, 3L)
   assert_eq(text.conservative_merge_head_bytes, 1152L)
   assert_false(text.merge_heads_fit_run_budget)
-  let integer = estimate_run_capacity(
-    SortConfig::new(
+  let integer = @external-sort.estimate_run_capacity(
+    @external-sort.SortConfig::new(
       key_kind=IntegerKey,
       memory_budget_bytes=1024,
       max_open_runs=4,
@@ -28,7 +28,7 @@ test "capacity estimate distinguishes text and integer keys" {
 
 ///|
 test "merge schedule reproduces a six-pass stress shape" {
-  let schedule = build_merge_schedule(625L, 3)
+  let schedule = @external-sort.build_merge_schedule(625L, 3)
   assert_eq(schedule.length(), 6)
   assert_eq(schedule.map(pass => (pass.input_runs, pass.output_runs)), [
     (625L, 209L),
@@ -44,9 +44,9 @@ test "merge schedule reproduces a six-pass stress shape" {
 
 ///|
 test "empty and singleton schedules need no merge" {
-  assert_eq(build_merge_schedule(0L, 32), [])
-  assert_eq(build_merge_schedule(1L, 32), [])
-  let pair = build_merge_schedule(2L, 32)
+  assert_eq(@external-sort.build_merge_schedule(0L, 32), [])
+  assert_eq(@external-sort.build_merge_schedule(1L, 32), [])
+  let pair = @external-sort.build_merge_schedule(2L, 32)
   assert_eq(pair, [
     { pass: 1, input_runs: 2L, output_runs: 1L, largest_group: 2, },
   ])
@@ -54,10 +54,10 @@ test "empty and singleton schedules need no merge" {
 
 ///|
 test "job estimate computes run count and payload IO lower bound" {
-  let estimate = estimate_job(
+  let estimate = @external-sort.estimate_job(
     1000L,
     100000L,
-    SortConfig::new(
+    @external-sort.SortConfig::new(
       key_kind=IntegerKey,
       memory_budget_bytes=1024,
       max_open_runs=4,
@@ -75,10 +75,10 @@ test "job estimate computes run count and payload IO lower bound" {
 
 ///|
 test "job estimate rounds average and run divisions upward" {
-  let estimate = estimate_job(
+  let estimate = @external-sort.estimate_job(
     3L,
     10L,
-    SortConfig::new(
+    @external-sort.SortConfig::new(
       key_kind=IntegerKey,
       memory_budget_bytes=256,
       max_open_runs=2,
@@ -93,7 +93,11 @@ test "job estimate rounds average and run divisions upward" {
 
 ///|
 test "empty job estimate is internally consistent" {
-  let estimate = estimate_job(0L, 0L, SortConfig::new())
+  let estimate = @external-sort.estimate_job(
+    0L,
+    0L,
+    @external-sort.SortConfig::new(),
+  )
   assert_eq(estimate.average_payload_bytes, 0L)
   assert_eq(estimate.initial_runs, 0L)
   assert_eq(estimate.merge_passes, 0)
@@ -104,25 +108,31 @@ test "empty job estimate is internally consistent" {
 
 ///|
 test "resource planner validates impossible inputs" {
-  try build_merge_schedule(-1L, 2) |> ignore catch {
+  try @external-sort.build_merge_schedule(-1L, 2) |> ignore catch {
     InvalidConfig(_) => ()
     _ => fail("unexpected schedule error")
   } noraise {
     _ => fail("expected negative run count rejection")
   }
-  try build_merge_schedule(2L, 1) |> ignore catch {
+  try @external-sort.build_merge_schedule(2L, 1) |> ignore catch {
     InvalidConfig(_) => ()
     _ => fail("unexpected fan-in error")
   } noraise {
     _ => fail("expected invalid fan-in rejection")
   }
-  try estimate_job(-1L, 0L, SortConfig::new()) |> ignore catch {
+  try
+    @external-sort.estimate_job(-1L, 0L, @external-sort.SortConfig::new())
+    |> ignore
+  catch {
     InvalidConfig(_) => ()
     _ => fail("unexpected record count error")
   } noraise {
     _ => fail("expected negative record count rejection")
   }
-  try estimate_job(0L, 1L, SortConfig::new()) |> ignore catch {
+  try
+    @external-sort.estimate_job(0L, 1L, @external-sort.SortConfig::new())
+    |> ignore
+  catch {
     InvalidConfig(_) => ()
     _ => fail("unexpected empty byte count error")
   } noraise {
@@ -132,10 +142,10 @@ test "resource planner validates impossible inputs" {
 
 ///|
 test "payload IO estimate saturates instead of wrapping" {
-  let estimate = estimate_job(
+  let estimate = @external-sort.estimate_job(
     9223372036854775807L,
     9223372036854775807L,
-    SortConfig::new(
+    @external-sort.SortConfig::new(
       memory_budget_bytes=256,
       max_open_runs=2,
       max_record_bytes=64,
@@ -149,11 +159,11 @@ test "payload IO estimate saturates instead of wrapping" {
 
 ///|
 test "resource estimate JSON exposes schedule and saturation" {
-  let json = job_estimate_json(
-    estimate_job(
+  let json = @external-sort.job_estimate_json(
+    @external-sort.estimate_job(
       20L,
       200L,
-      SortConfig::new(
+      @external-sort.SortConfig::new(
         memory_budget_bytes=256,
         max_open_runs=2,
         max_record_bytes=64,

@@ -1,6 +1,8 @@
 ///|
 test "stream verifier accepts ascending text" {
-  let verifier = SortednessVerifier::new(SortConfig::new())
+  let verifier = @external-sort.SortednessVerifier::new(
+    @external-sort.SortConfig::new(),
+  )
   verifier.push("alpha", "alpha")
   verifier.push("bravo-1", "bravo")
   verifier.push("bravo-2", "bravo")
@@ -13,7 +15,9 @@ test "stream verifier accepts ascending text" {
 
 ///|
 test "stream verifier reports first ascending violation" {
-  let verifier = SortednessVerifier::new(SortConfig::new())
+  let verifier = @external-sort.SortednessVerifier::new(
+    @external-sort.SortConfig::new(),
+  )
   verifier.push("a", "a")
   verifier.push("c", "c")
   verifier.push("b", "b")
@@ -28,8 +32,8 @@ test "stream verifier reports first ascending violation" {
 
 ///|
 test "stream verifier supports descending integers" {
-  let verifier = SortednessVerifier::new(
-    SortConfig::new(order=Descending, key_kind=IntegerKey),
+  let verifier = @external-sort.SortednessVerifier::new(
+    @external-sort.SortConfig::new(order=Descending, key_kind=IntegerKey),
   )
   for value in ["10", "10", "2", "0", "-4"] {
     verifier.push(value, value)
@@ -39,8 +43,8 @@ test "stream verifier supports descending integers" {
 
 ///|
 test "stream verifier finds descending violation" {
-  let verifier = SortednessVerifier::new(
-    SortConfig::new(order=Descending, key_kind=IntegerKey),
+  let verifier = @external-sort.SortednessVerifier::new(
+    @external-sort.SortConfig::new(order=Descending, key_kind=IntegerKey),
   )
   verifier.push("10", "10")
   verifier.push("2", "2")
@@ -54,7 +58,9 @@ test "stream verifier finds descending violation" {
 
 ///|
 test "record verifier detects unstable equal keys" {
-  let verifier = SortednessVerifier::new(SortConfig::new())
+  let verifier = @external-sort.SortednessVerifier::new(
+    @external-sort.SortConfig::new(),
+  )
   verifier.push_record({
     key: TextValue("same"),
     input_position: 5L,
@@ -74,17 +80,21 @@ test "record verifier detects unstable equal keys" {
 
 ///|
 test "empty and singleton streams are sorted" {
-  let empty = SortednessVerifier::new(SortConfig::new())
+  let empty = @external-sort.SortednessVerifier::new(
+    @external-sort.SortConfig::new(),
+  )
   assert_true(empty.report().is_sorted())
-  let singleton = SortednessVerifier::new(SortConfig::new())
+  let singleton = @external-sort.SortednessVerifier::new(
+    @external-sort.SortConfig::new(),
+  )
   singleton.push("only", "only")
   assert_true(singleton.report().is_sorted())
 }
 
 ///|
 test "verifier propagates key and size failures" {
-  let numeric = SortednessVerifier::new(
-    SortConfig::new(key_kind=IntegerKey, max_record_bytes=16),
+  let numeric = @external-sort.SortednessVerifier::new(
+    @external-sort.SortConfig::new(key_kind=IntegerKey, max_record_bytes=16),
   )
   try numeric.push("payload", "not-number") catch {
     InvalidKey(_) => ()
@@ -92,8 +102,8 @@ test "verifier propagates key and size failures" {
   } noraise {
     _ => fail("expected invalid key")
   }
-  let bounded = SortednessVerifier::new(
-    SortConfig::new(memory_budget_bytes=256, max_record_bytes=4),
+  let bounded = @external-sort.SortednessVerifier::new(
+    @external-sort.SortConfig::new(memory_budget_bytes=256, max_record_bytes=4),
   )
   try bounded.push("12345", "x") catch {
     RecordTooLarge(actual~, limit~) => {

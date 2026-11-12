@@ -3,14 +3,14 @@
 pub struct RunBuilder {
   config : SortConfig
   mut records : Array[SortRecord]
-  mut retained_bytes : Int
+  mut retained_bytes : Int32
   mut next_position : Int64
 }
 
 ///|
 pub fn RunBuilder::new(
   config : SortConfig,
-  start_position? : Int64 = 0L,
+  start_position~ : Int64 = 0L,
 ) -> RunBuilder raise SortError {
   if start_position < 0L {
     raise InvalidConfig("start_position must not be negative")
@@ -67,7 +67,7 @@ pub fn RunBuilder::finish(self : RunBuilder) -> Array[SortRecord]? {
 }
 
 ///|
-pub fn RunBuilder::retained_bytes(self : RunBuilder) -> Int {
+pub fn RunBuilder::retained_bytes(self : RunBuilder) -> Int32 {
   self.retained_bytes
 }
 

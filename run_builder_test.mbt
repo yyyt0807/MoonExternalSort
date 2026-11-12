@@ -1,7 +1,10 @@
 ///|
 test "run builder spills before exceeding its retained budget" {
-  let config = SortConfig::new(memory_budget_bytes=256, max_record_bytes=200)
-  let builder = RunBuilder::new(config)
+  let config = @external-sort.SortConfig::new(
+    memory_budget_bytes=256,
+    max_record_bytes=200,
+  )
+  let builder = @external-sort.RunBuilder::new(config)
   let c = "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
   let a = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
   let b = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
@@ -17,8 +20,11 @@ test "run builder spills before exceeding its retained budget" {
 
 ///|
 test "run builder is stable for equal keys" {
-  let config = SortConfig::new(memory_budget_bytes=1024, max_record_bytes=512)
-  let builder = RunBuilder::new(config)
+  let config = @external-sort.SortConfig::new(
+    memory_budget_bytes=1024,
+    max_record_bytes=512,
+  )
+  let builder = @external-sort.RunBuilder::new(config)
   ignore(builder.push("first", "x"))
   ignore(builder.push("second", "x"))
   ignore(builder.push("third", "x"))
@@ -28,8 +34,11 @@ test "run builder is stable for equal keys" {
 
 ///|
 test "oversized input record is rejected" {
-  let config = SortConfig::new(memory_budget_bytes=256, max_record_bytes=4)
-  let builder = RunBuilder::new(config)
+  let config = @external-sort.SortConfig::new(
+    memory_budget_bytes=256,
+    max_record_bytes=4,
+  )
+  let builder = @external-sort.RunBuilder::new(config)
   try ignore(builder.push("12345", "x")) catch {
     RecordTooLarge(actual=5, limit=4) => ()
     _ => fail("unexpected SortError variant")

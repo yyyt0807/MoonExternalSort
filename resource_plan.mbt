@@ -1,37 +1,40 @@
 ///|
 /// Conservative record and merge-head capacity derived from a SortConfig.
+#derive(Debug, Eq)
 pub(all) struct RunCapacityEstimate {
   worst_case_record_bytes : Int64
   records_per_run : Int64
   conservative_merge_head_bytes : Int64
   merge_heads_fit_run_budget : Bool
-} derive(Debug, Eq)
+}
 
 ///|
 /// One row in a multi-pass merge schedule.
+#derive(Debug, Eq)
 pub(all) struct MergePassEstimate {
-  pass : Int
+  pass : Int32
   input_runs : Int64
   output_runs : Int64
-  largest_group : Int
-} derive(Debug, Eq)
+  largest_group : Int32
+}
 
 ///|
 /// Static planning result. Byte estimates describe original payload bytes;
 /// internal JSONL escaping and host filesystem allocation are intentionally not
 /// presented as exact values.
+#derive(Debug, Eq)
 pub(all) struct JobEstimate {
   input_records : Int64
   input_payload_bytes : Int64
   average_payload_bytes : Int64
   records_per_run : Int64
   initial_runs : Int64
-  merge_passes : Int
+  merge_passes : Int32
   minimum_payload_io_bytes : Int64
   peak_payload_generation_bytes : Int64
   schedule : Array[MergePassEstimate]
   saturated : Bool
-} derive(Debug, Eq)
+}
 
 ///|
 /// Compute conservative record retention from configured maximum input size.
@@ -64,7 +67,7 @@ pub fn estimate_run_capacity(config : SortConfig) -> RunCapacityEstimate {
 /// singleton cases need no merge passes.
 pub fn build_merge_schedule(
   initial_runs : Int64,
-  max_open_runs : Int,
+  max_open_runs : Int32,
 ) -> Array[MergePassEstimate] raise SortError {
   if initial_runs < 0L {
     raise InvalidConfig("initial_runs must not be negative")
@@ -254,3 +257,21 @@ fn minimum_i64(left : Int64, right : Int64) -> Int64 {
     right
   }
 }
+
+///|
+pub extend JobEstimate with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
+pub extend JobEstimate with Eq::{not_equal, equal}
+
+///|
+pub extend MergePassEstimate with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
+pub extend MergePassEstimate with Eq::{not_equal, equal}
+
+///|
+pub extend RunCapacityEstimate with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
+pub extend RunCapacityEstimate with Eq::{not_equal, equal}

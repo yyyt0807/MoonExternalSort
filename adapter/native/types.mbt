@@ -1,5 +1,6 @@
 ///|
 /// Native filesystem inputs for one new Sort Job.
+#derive(Debug, Eq)
 pub(all) struct FileSortOptions {
   input_path : String
   output_path : String
@@ -7,18 +8,20 @@ pub(all) struct FileSortOptions {
   config : @sort.SortConfig
   selector : @sort.KeySelector
   replace_output : Bool
-} derive(Debug, Eq)
+}
 
 ///|
 /// Native filesystem inputs for a constant-space sortedness check.
+#derive(Debug, Eq)
 pub(all) struct FileCheckOptions {
   input_path : String
   config : @sort.SortConfig
   selector : @sort.KeySelector
-} derive(Debug, Eq)
+}
 
 ///|
 /// Machine-readable result of checking one file without rewriting it.
+#derive(Debug, Eq)
 pub(all) struct FileCheckReport {
   input_path : String
   records : Int64
@@ -28,27 +31,29 @@ pub(all) struct FileCheckReport {
   current_index : Int64?
   previous_key : @sort.SortValue?
   current_key : @sort.SortValue?
-} derive(Debug, Eq)
+}
 
 ///|
 /// Stable machine-readable summary of a completed or already-published job.
+#derive(Debug, Eq)
 pub(all) struct SortReport {
   input_records : Int64
-  initial_runs : Int
-  merge_passes : Int
+  initial_runs : Int32
+  merge_passes : Int32
   output_path : String
   manifest_path : String
   recovered : Bool
-} derive(Debug, Eq)
+}
 
 ///|
+#derive(Debug, Eq)
 pub(all) suberror FileSortError {
   WorkspaceExists(String)
   MissingArtifact(String)
   InvalidInput(String)
   OutputExists(String)
   CorruptRun(String)
-} derive(Debug, Eq)
+}
 
 ///|
 pub fn report_json(report : SortReport) -> String {
@@ -129,3 +134,33 @@ fn sort_value_json(value : @sort.SortValue) -> String {
       "}"
   }
 }
+
+///|
+pub extend FileCheckOptions with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
+pub extend FileCheckOptions with Eq::{not_equal, equal}
+
+///|
+pub extend FileCheckReport with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
+pub extend FileCheckReport with Eq::{not_equal, equal}
+
+///|
+pub extend FileSortError with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
+pub extend FileSortError with Eq::{not_equal, equal}
+
+///|
+pub extend FileSortOptions with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
+pub extend FileSortOptions with Eq::{not_equal, equal}
+
+///|
+pub extend SortReport with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
+pub extend SortReport with Eq::{not_equal, equal}

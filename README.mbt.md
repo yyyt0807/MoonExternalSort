@@ -5,8 +5,11 @@ Stable bounded-memory external sorting primitives for MoonBit.
 ```mbt check
 ///|
 test {
-  let config = SortConfig::new(memory_budget_bytes=1024, max_record_bytes=256)
-  let builder = RunBuilder::new(config)
+  let config = @external-sort.SortConfig::new(
+    memory_budget_bytes=1024,
+    max_record_bytes=256,
+  )
+  let builder = @external-sort.RunBuilder::new(config)
   ignore(builder.push("second", "b"))
   ignore(builder.push("first", "a"))
   guard builder.finish() is Some(run) else { fail("expected run") }

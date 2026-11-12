@@ -1,7 +1,10 @@
 ///|
 test "Top-K selects smallest text records stably" {
-  let selector = TopKSelector::new(
-    SortConfig::new(memory_budget_bytes=1024, max_record_bytes=128),
+  let selector = @external-sort.TopKSelector::new(
+    @external-sort.SortConfig::new(
+      memory_budget_bytes=1024,
+      max_record_bytes=128,
+    ),
     4,
   )
   for
@@ -27,8 +30,8 @@ test "Top-K selects smallest text records stably" {
 
 ///|
 test "Top-K selects greatest integers for descending output" {
-  let selector = TopKSelector::new(
-    SortConfig::new(
+  let selector = @external-sort.TopKSelector::new(
+    @external-sort.SortConfig::new(
       order=Descending,
       key_kind=IntegerKey,
       memory_budget_bytes=1024,
@@ -46,7 +49,10 @@ test "Top-K selects greatest integers for descending output" {
 
 ///|
 test "Top-K zero limit validates input without retaining it" {
-  let selector = TopKSelector::new(SortConfig::new(), 0)
+  let selector = @external-sort.TopKSelector::new(
+    @external-sort.SortConfig::new(),
+    0,
+  )
   selector.push("one", "one")
   selector.push("two", "two")
   let result = selector.finish()
@@ -58,7 +64,10 @@ test "Top-K zero limit validates input without retaining it" {
 
 ///|
 test "Top-K returns all records when fewer than limit" {
-  let selector = TopKSelector::new(SortConfig::new(), 10)
+  let selector = @external-sort.TopKSelector::new(
+    @external-sort.SortConfig::new(),
+    10,
+  )
   selector.push("c", "c")
   selector.push("a", "a")
   selector.push("b", "b")
@@ -69,8 +78,11 @@ test "Top-K returns all records when fewer than limit" {
 
 ///|
 test "Top-K enforces aggregate selection budget" {
-  let selector = TopKSelector::new(
-    SortConfig::new(memory_budget_bytes=256, max_record_bytes=128),
+  let selector = @external-sort.TopKSelector::new(
+    @external-sort.SortConfig::new(
+      memory_budget_bytes=256,
+      max_record_bytes=128,
+    ),
     4,
   )
   selector.push("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "a")
@@ -89,13 +101,19 @@ test "Top-K enforces aggregate selection budget" {
 
 ///|
 test "Top-K rejects invalid limits and repeated finish" {
-  try TopKSelector::new(SortConfig::new(), -1) |> ignore catch {
+  try
+    @external-sort.TopKSelector::new(@external-sort.SortConfig::new(), -1)
+    |> ignore
+  catch {
     InvalidConfig(_) => ()
     _ => fail("unexpected invalid limit failure")
   } noraise {
     _ => fail("expected invalid limit")
   }
-  let selector = TopKSelector::new(SortConfig::new(), 1)
+  let selector = @external-sort.TopKSelector::new(
+    @external-sort.SortConfig::new(),
+    1,
+  )
   selector.push("one", "one")
   ignore(selector.finish())
   try selector.finish() |> ignore catch {
@@ -108,13 +126,13 @@ test "Top-K rejects invalid limits and repeated finish" {
 
 ///|
 test "Top-K result matches full reference sort" {
-  let config = SortConfig::new(
+  let config = @external-sort.SortConfig::new(
     key_kind=IntegerKey,
     memory_budget_bytes=4096,
     max_record_bytes=64,
   )
-  let selector = TopKSelector::new(config, 17)
-  let reference : Array[SortRecord] = []
+  let selector = @external-sort.TopKSelector::new(config, 17)
+  let reference : Array[@external-sort.SortRecord] = []
   for index = 0; index < 200; index = index + 1 {
     let value = (index * 73 + 19) % 41 - 20
     let text = value.to_string()
@@ -125,7 +143,9 @@ test "Top-K result matches full reference sort" {
       payload: text + ":" + index.to_string(),
     })
   }
-  reference.sort_by((left, right) => compare_records(left, right, Ascending))
+  reference.sort_by((left, right) => {
+    @external-sort.compare_records(left, right, Ascending)
+  })
   let expected = reference[0:17].to_owned()
   assert_eq(selector.finish().records, expected)
 }

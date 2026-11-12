@@ -11,7 +11,7 @@ async test "native check reports sorted CSV input" {
     "1,alpha\n1,bravo\n2,charlie\n10,delta\n",
     create_mode=CreateOrTruncate,
   )
-  let report = check_file({
+  let report = @native.check_file({
     input_path: input,
     config: @sort.SortConfig::new(
       key_kind=@sort.IntegerKey,
@@ -40,7 +40,7 @@ async test "native check returns the first disorder diagnostic" {
     "1\tfirst\n3\tthird\n2\tsecond\n4\tfourth\n",
     create_mode=CreateOrTruncate,
   )
-  let report = check_file({
+  let report = @native.check_file({
     input_path: input,
     config: @sort.SortConfig::new(
       key_kind=@sort.IntegerKey,
@@ -55,7 +55,7 @@ async test "native check returns the first disorder diagnostic" {
   assert_eq(report.current_index, Some(2L))
   assert_eq(report.previous_key, Some(@sort.IntegerValue(3L)))
   assert_eq(report.current_key, Some(@sort.IntegerValue(2L)))
-  let json = check_report_json(report)
+  let json = @native.check_report_json(report)
   assert_true(json.contains("\"sorted\":false"))
   assert_true(json.contains("\"previousIndex\":1"))
   @fs.rmdir(root, recursive=true)
@@ -70,7 +70,7 @@ async test "native check accepts empty and unterminated files" {
   @fs.mkdir(root, recursive=true)
   let empty = root + "/empty.txt"
   @fs.write_file(empty, "", create_mode=CreateOrTruncate)
-  let empty_report = check_file({
+  let empty_report = @native.check_file({
     input_path: empty,
     config: @sort.SortConfig::new(),
     selector: @sort.WholeRecord,
@@ -79,7 +79,7 @@ async test "native check accepts empty and unterminated files" {
   assert_eq(empty_report.records, 0L)
   let single = root + "/single.txt"
   @fs.write_file(single, "only", create_mode=CreateOrTruncate)
-  let single_report = check_file({
+  let single_report = @native.check_file({
     input_path: single,
     config: @sort.SortConfig::new(),
     selector: @sort.WholeRecord,

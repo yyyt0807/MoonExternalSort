@@ -1,20 +1,21 @@
 ///|
 /// A completed stable Top-K selection and its resource accounting.
+#derive(Debug, Eq)
 pub(all) struct TopKResult {
   records : Array[SortRecord]
   input_records : Int64
   discarded_records : Int64
-  retained_bytes : Int
-} derive(Debug, Eq)
+  retained_bytes : Int32
+}
 
 ///|
 /// Streaming stable Top-K selection. The heap root is the worst retained
 /// record, so an incoming better record can replace it in logarithmic time.
 pub struct TopKSelector {
   config : SortConfig
-  limit : Int
+  limit : Int32
   heap : Array[SortRecord]
-  mut retained_bytes : Int
+  mut retained_bytes : Int32
   mut input_records : Int64
   mut discarded_records : Int64
   mut next_position : Int64
@@ -24,8 +25,8 @@ pub struct TopKSelector {
 ///|
 pub fn TopKSelector::new(
   config : SortConfig,
-  limit : Int,
-  start_position? : Int64 = 0L,
+  limit : Int32,
+  start_position~ : Int64 = 0L,
 ) -> TopKSelector raise SortError {
   if limit < 0 {
     raise InvalidConfig("Top-K limit must not be negative")
@@ -121,12 +122,12 @@ pub fn TopKSelector::finish(self : TopKSelector) -> TopKResult raise SortError {
 }
 
 ///|
-pub fn TopKSelector::retained_count(self : TopKSelector) -> Int {
+pub fn TopKSelector::retained_count(self : TopKSelector) -> Int32 {
   self.heap.length()
 }
 
 ///|
-pub fn TopKSelector::retained_bytes(self : TopKSelector) -> Int {
+pub fn TopKSelector::retained_bytes(self : TopKSelector) -> Int32 {
   self.retained_bytes
 }
 
@@ -136,7 +137,10 @@ pub fn TopKSelector::observed_count(self : TopKSelector) -> Int64 {
 }
 
 ///|
-fn ensure_selection_budget(required : Int, limit : Int) -> Unit raise SortError {
+fn ensure_selection_budget(
+  required : Int32,
+  limit : Int32,
+) -> Unit raise SortError {
   if required > limit {
     raise SelectionBudgetExceeded(required~, limit~)
   }
@@ -147,7 +151,7 @@ fn ensure_selection_budget(required : Int, limit : Int) -> Unit raise SortError 
 /// stays at index zero.
 fn top_k_sift_up(
   heap : Array[SortRecord],
-  start : Int,
+  start : Int32,
   order : SortOrder,
 ) -> Unit {
   let mut index = start
@@ -164,7 +168,7 @@ fn top_k_sift_up(
 ///|
 fn top_k_sift_down(
   heap : Array[SortRecord],
-  start : Int,
+  start : Int32,
   order : SortOrder,
 ) -> Unit {
   let mut index = start
@@ -189,8 +193,14 @@ fn top_k_sift_down(
 }
 
 ///|
-fn top_k_swap(heap : Array[SortRecord], left : Int, right : Int) -> Unit {
+fn top_k_swap(heap : Array[SortRecord], left : Int32, right : Int32) -> Unit {
   let temporary = heap[left]
   heap[left] = heap[right]
   heap[right] = temporary
 }
+
+///|
+pub extend TopKResult with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
+pub extend TopKResult with Eq::{not_equal, equal}

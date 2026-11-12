@@ -17,7 +17,3 @@ description = "Stable bounded-memory external sorting and merge planning for Moo
 import {
   "moonbitlang/async@0.20.6",
 }
-
-options(
-  exclude: [ "项目申报书.md" ],
-)

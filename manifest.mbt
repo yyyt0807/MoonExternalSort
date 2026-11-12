@@ -1,21 +1,24 @@
 ///|
 /// Durable phases in which a Sort Job may be recovered.
+#derive(Debug, Eq)
 pub(all) enum JobPhase {
   RunsReady
   Merging
   Published
-} derive(Debug, Eq)
+}
 
 ///|
 /// One committed Run referenced by a Job Manifest.
+#derive(Debug, Eq)
 pub(all) struct RunDescriptor {
   path : String
   record_count : Int64
-} derive(Debug, Eq)
+}
 
 ///|
 /// Portable recovery state. A Native adapter commits this document atomically
 /// only after every Run referenced by it has been fully written.
+#derive(Debug, Eq)
 pub(all) struct JobManifest {
   phase : JobPhase
   input_path : String
@@ -24,10 +27,10 @@ pub(all) struct JobManifest {
   config : SortConfig
   selector : KeySelector
   input_records : Int64
-  initial_run_count : Int
-  merge_pass : Int
+  initial_run_count : Int32
+  merge_pass : Int32
   runs : Array[RunDescriptor]
-} derive(Debug, Eq)
+}
 
 ///|
 pub fn encode_manifest(manifest : JobManifest) -> String {
@@ -251,7 +254,7 @@ fn manifest_string(
 fn manifest_int(
   fields : Map[String, Json],
   name : String,
-) -> Int raise SortError {
+) -> Int32 raise SortError {
   let value = manifest_int64(fields, name)
   if value < -2147483648L || value > 2147483647L {
     raise InvalidManifest(name + " is outside Int range")
@@ -283,3 +286,21 @@ fn manifest_int64(
     _ => raise InvalidManifest(name + " must be an integer")
   }
 }
+
+///|
+pub extend JobManifest with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
+pub extend JobManifest with Eq::{not_equal, equal}
+
+///|
+pub extend JobPhase with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
+pub extend JobPhase with Eq::{not_equal, equal}
+
+///|
+pub extend RunDescriptor with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
+pub extend RunDescriptor with Eq::{not_equal, equal}

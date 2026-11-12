@@ -1,24 +1,26 @@
 ///|
 /// CSV parsing and rendering failures. This codec operates on one logical
 /// record, so physical line framing remains the caller's responsibility.
+#derive(Debug, Eq)
 pub(all) suberror CsvError {
   InvalidDialect(String)
-  MalformedCsv(offset~ : Int, message~ : String)
-  CsvFieldMissing(index~ : Int, available~ : Int)
-} derive(Debug, Eq)
+  MalformedCsv(offset~ : Int32, message~ : String)
+  CsvFieldMissing(index~ : Int32, available~ : Int32)
+}
 
 ///|
 /// Syntax characters for the single-record CSV codec.
+#derive(Debug, Eq)
 pub(all) struct CsvDialect {
   delimiter : Char
   quote : Char
-} derive(Debug, Eq)
+}
 
 ///|
 /// Construct a validated dialect.
 pub fn CsvDialect::new(
-  delimiter? : Char = ',',
-  quote? : Char = '"',
+  delimiter~ : Char = ',',
+  quote~ : Char = '"',
 ) -> CsvDialect raise CsvError {
   if delimiter == quote {
     raise InvalidDialect("delimiter and quote must be different")
@@ -34,7 +36,7 @@ pub fn CsvDialect::new(
 /// and a doubled quote inside a quoted field decodes to one quote.
 pub fn parse_csv_record(
   record : String,
-  dialect? : CsvDialect = { delimiter: ',', quote: '"', },
+  dialect~ : CsvDialect = { delimiter: ',', quote: '"', },
 ) -> Array[String] raise CsvError {
   let fields : Array[String] = []
   let mut field = StringBuilder()
@@ -99,8 +101,8 @@ pub fn parse_csv_record(
 /// Select one decoded field and report the available field count on failure.
 pub fn select_csv_field(
   record : String,
-  index : Int,
-  dialect? : CsvDialect = { delimiter: ',', quote: '"', },
+  index : Int32,
+  dialect~ : CsvDialect = { delimiter: ',', quote: '"', },
 ) -> String raise CsvError {
   if index < 0 {
     raise CsvFieldMissing(index~, available=0)
@@ -116,7 +118,7 @@ pub fn select_csv_field(
 /// Render one field with the minimum quoting necessary for the dialect.
 pub fn encode_csv_field(
   value : String,
-  dialect? : CsvDialect = { delimiter: ',', quote: '"', },
+  dialect~ : CsvDialect = { delimiter: ',', quote: '"', },
 ) -> String {
   let mut quoted = value == ""
   for char in value {
@@ -146,7 +148,7 @@ pub fn encode_csv_field(
 /// Encode a complete record using the supplied dialect.
 pub fn encode_csv_record(
   fields : Array[String],
-  dialect? : CsvDialect = { delimiter: ',', quote: '"', },
+  dialect~ : CsvDialect = { delimiter: ',', quote: '"', },
 ) -> String {
   let output = StringBuilder()
   for index, field in fields {
@@ -157,3 +159,15 @@ pub fn encode_csv_record(
   }
   output.to_string()
 }
+
+///|
+pub extend CsvDialect with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
+pub extend CsvDialect with Eq::{not_equal, equal}
+
+///|
+pub extend CsvError with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
+pub extend CsvError with Eq::{not_equal, equal}

@@ -1,7 +1,7 @@
 ///|
 priv struct MergeHead {
   record : @sort.SortRecord
-  reader_index : Int
+  reader_index : Int32
 }
 
 ///|
@@ -88,7 +88,7 @@ pub async fn sort_file(options : FileSortOptions) -> SortReport {
 /// interrupted, uncommitted Merge Pass are overwritten and never trusted.
 pub async fn resume_file(
   manifest_path : String,
-  replace_output? : Bool = false,
+  replace_output~ : Bool = false,
 ) -> SortReport {
   if !@fs.exists(manifest_path) {
     raise MissingArtifact("manifest does not exist: " + manifest_path)
@@ -339,7 +339,7 @@ fn manifest_path(work_directory : String) -> String {
 }
 
 ///|
-fn run_path(work_directory : String, pass : Int, group : Int) -> String {
+fn run_path(work_directory : String, pass : Int32, group : Int32) -> String {
   work_directory +
   "/pass-" +
   pass.to_string() +

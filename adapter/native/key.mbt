@@ -1,6 +1,6 @@
 ///|
 fn decode_input_line(bytes : Bytes) -> String raise FileSortError {
-  let content = match bytes.chop_suffix(b"\r") {
+  let content = match bytes.strip_suffix(b"\r") {
     Some(value) => value.to_owned()
     None => bytes
   }

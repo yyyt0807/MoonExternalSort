@@ -1,19 +1,21 @@
 ///|
 /// The first adjacent pair that violates the configured order.
+#derive(Debug, Eq)
 pub(all) struct OrderViolation {
   previous_index : Int64
   current_index : Int64
   previous_key : SortValue
   current_key : SortValue
-} derive(Debug, Eq)
+}
 
 ///|
 /// Summary produced by a streaming sortedness check.
+#derive(Debug, Eq)
 pub(all) struct VerificationReport {
   records : Int64
   equal_adjacent_keys : Int64
   violation : OrderViolation?
-} derive(Debug, Eq)
+}
 
 ///|
 /// Stateful constant-space verifier for an already ordered record stream.
@@ -114,7 +116,7 @@ pub fn VerificationReport::is_sorted(self : VerificationReport) -> Bool {
 
 ///|
 /// Compare keys without applying direction or stable position tie-breaking.
-pub fn compare_sort_values(left : SortValue, right : SortValue) -> Int {
+pub fn compare_sort_values(left : SortValue, right : SortValue) -> Int32 {
   match (left, right) {
     (TextValue(a), TextValue(b)) => a.compare(b)
     (IntegerValue(a), IntegerValue(b)) => a.compare(b)
@@ -127,3 +129,15 @@ pub fn compare_sort_values(left : SortValue, right : SortValue) -> Int {
     (DecimalValue(_), IntegerValue(_)) => 1
   }
 }
+
+///|
+pub extend OrderViolation with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
+pub extend OrderViolation with Eq::{not_equal, equal}
+
+///|
+pub extend VerificationReport with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
+pub extend VerificationReport with Eq::{not_equal, equal}

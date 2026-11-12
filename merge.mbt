@@ -1,7 +1,7 @@
 ///|
 priv struct HeapEntry {
   record : SortRecord
-  run_index : Int
+  run_index : Int32
 }
 
 ///|

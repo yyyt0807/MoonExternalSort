@@ -6,13 +6,13 @@ import {
 }
 
 // Values
-pub fn build_merge_schedule(Int64, Int) -> Array[MergePassEstimate] raise SortError
+pub fn build_merge_schedule(Int64, Int32) -> Array[MergePassEstimate] raise SortError
 
-pub fn compare_decimal_keys(DecimalKeyValue, DecimalKeyValue) -> Int
+pub fn compare_decimal_keys(DecimalKeyValue, DecimalKeyValue) -> Int32
 
-pub fn compare_records(SortRecord, SortRecord, SortOrder) -> Int
+pub fn compare_records(SortRecord, SortRecord, SortOrder) -> Int32
 
-pub fn compare_sort_values(SortValue, SortValue) -> Int
+pub fn compare_sort_values(SortValue, SortValue) -> Int32
 
 pub fn decode_manifest(String) -> JobManifest raise SortError
 
@@ -30,11 +30,11 @@ pub fn estimate_job(Int64, Int64, SortConfig) -> JobEstimate raise SortError
 
 pub fn estimate_run_capacity(SortConfig) -> RunCapacityEstimate
 
-pub fn estimated_record_bytes(SortRecord) -> Int
+pub fn estimated_record_bytes(SortRecord) -> Int32
 
 pub fn job_estimate_json(JobEstimate) -> String
 
-pub fn merge_pass_count(Int, Int) -> Int raise SortError
+pub fn merge_pass_count(Int32, Int32) -> Int32 raise SortError
 
 pub fn merge_sorted_runs(Array[Array[SortRecord]], SortOrder) -> Array[SortRecord]
 
@@ -44,43 +44,60 @@ pub fn parse_decimal_key(String) -> DecimalKeyValue raise SortError
 
 pub fn parse_key(String, KeyKind) -> SortValue raise SortError
 
-pub fn plan_merge_pass(Int, Int) -> Array[MergeGroup] raise SortError
+pub fn plan_merge_pass(Int32, Int32) -> Array[MergeGroup] raise SortError
 
-pub fn select_csv_field(String, Int, dialect? : CsvDialect) -> String raise CsvError
+pub fn select_csv_field(String, Int32, dialect? : CsvDialect) -> String raise CsvError
 
 pub fn validate_selector(KeySelector) -> Unit raise SortError
 
 // Errors
+#derive(Eq, @debug.Debug)
 pub(all) suberror CsvError {
   InvalidDialect(String)
-  MalformedCsv(offset~ : Int, message~ : String)
-  CsvFieldMissing(index~ : Int, available~ : Int)
-} derive(Eq, @debug.Debug)
+  MalformedCsv(offset~ : Int32, message~ : String)
+  CsvFieldMissing(index~ : Int32, available~ : Int32)
+}
+pub fn CsvError::equal(Self, Self) -> Bool
+pub fn CsvError::not_equal(Self, Self) -> Bool
+pub fn CsvError::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) suberror SortError {
   InvalidConfig(String)
   InvalidKey(String)
-  RecordTooLarge(actual~ : Int, limit~ : Int)
-  SelectionBudgetExceeded(required~ : Int, limit~ : Int)
+  RecordTooLarge(actual~ : Int32, limit~ : Int32)
+  SelectionBudgetExceeded(required~ : Int32, limit~ : Int32)
   SequenceExhausted
   MalformedRun(String)
   InvalidManifest(String)
-} derive(Eq, @debug.Debug)
+}
+pub fn SortError::equal(Self, Self) -> Bool
+pub fn SortError::not_equal(Self, Self) -> Bool
+pub fn SortError::to_repr(Self) -> @debug.Repr
 
 // Types and methods
+#derive(Eq, @debug.Debug)
 pub(all) struct CsvDialect {
   delimiter : Char
   quote : Char
-} derive(Eq, @debug.Debug)
+}
+pub fn CsvDialect::equal(Self, Self) -> Bool
 pub fn CsvDialect::new(delimiter? : Char, quote? : Char) -> Self raise CsvError
+pub fn CsvDialect::not_equal(Self, Self) -> Bool
+pub fn CsvDialect::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) struct DecimalKeyValue {
   negative : Bool
   digits : String
-  scale : Int
-} derive(Eq, @debug.Debug)
+  scale : Int32
+}
+pub fn DecimalKeyValue::equal(Self, Self) -> Bool
+pub fn DecimalKeyValue::not_equal(Self, Self) -> Bool
 pub fn DecimalKeyValue::to_canonical_string(Self) -> String
+pub fn DecimalKeyValue::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) struct GroupStatistics {
   records : Int64
   distinct_keys : Int64
@@ -90,24 +107,32 @@ pub(all) struct GroupStatistics {
   first_key : SortValue?
   last_key : SortValue?
   verification : VerificationReport
-} derive(Eq, @debug.Debug)
+}
 pub fn GroupStatistics::average_group_size(Self) -> Double
 pub fn GroupStatistics::duplicate_records(Self) -> Int64
+pub fn GroupStatistics::equal(Self, Self) -> Bool
 pub fn GroupStatistics::is_sorted(Self) -> Bool
+pub fn GroupStatistics::not_equal(Self, Self) -> Bool
+pub fn GroupStatistics::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) struct JobEstimate {
   input_records : Int64
   input_payload_bytes : Int64
   average_payload_bytes : Int64
   records_per_run : Int64
   initial_runs : Int64
-  merge_passes : Int
+  merge_passes : Int32
   minimum_payload_io_bytes : Int64
   peak_payload_generation_bytes : Int64
   schedule : Array[MergePassEstimate]
   saturated : Bool
-} derive(Eq, @debug.Debug)
+}
+pub fn JobEstimate::equal(Self, Self) -> Bool
+pub fn JobEstimate::not_equal(Self, Self) -> Bool
+pub fn JobEstimate::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) struct JobManifest {
   phase : JobPhase
   input_path : String
@@ -116,108 +141,159 @@ pub(all) struct JobManifest {
   config : SortConfig
   selector : KeySelector
   input_records : Int64
-  initial_run_count : Int
-  merge_pass : Int
+  initial_run_count : Int32
+  merge_pass : Int32
   runs : Array[RunDescriptor]
-} derive(Eq, @debug.Debug)
+}
+pub fn JobManifest::equal(Self, Self) -> Bool
+pub fn JobManifest::not_equal(Self, Self) -> Bool
+pub fn JobManifest::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) enum JobPhase {
   RunsReady
   Merging
   Published
-} derive(Eq, @debug.Debug)
+}
+pub fn JobPhase::equal(Self, Self) -> Bool
+pub fn JobPhase::not_equal(Self, Self) -> Bool
+pub fn JobPhase::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) enum KeyKind {
   TextKey
   IntegerKey
   DecimalKey
-} derive(Eq, @debug.Debug)
+}
+pub fn KeyKind::equal(Self, Self) -> Bool
+pub fn KeyKind::not_equal(Self, Self) -> Bool
+pub fn KeyKind::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) enum KeySelector {
   WholeRecord
-  DelimitedField(index~ : Int, delimiter~ : String)
-  CsvField(index~ : Int, delimiter~ : Char)
+  DelimitedField(index~ : Int32, delimiter~ : String)
+  CsvField(index~ : Int32, delimiter~ : Char)
   JsonField(String)
-} derive(Eq, @debug.Debug)
+}
+pub fn KeySelector::equal(Self, Self) -> Bool
+pub fn KeySelector::not_equal(Self, Self) -> Bool
+pub fn KeySelector::to_repr(Self) -> @debug.Repr
 
 pub struct LineFramer {
-  max_record_bytes : Int
+  max_record_bytes : Int32
   mut pending : Array[Byte]
   mut finished : Bool
 }
 pub fn LineFramer::finish(Self) -> Bytes? raise SortError
-pub fn LineFramer::new(Int) -> Self raise SortError
-pub fn LineFramer::pending_bytes(Self) -> Int
+pub fn LineFramer::new(Int32) -> Self raise SortError
+pub fn LineFramer::pending_bytes(Self) -> Int32
 pub fn LineFramer::push(Self, Bytes) -> Array[Bytes] raise SortError
 
+#derive(Eq, @debug.Debug)
 pub(all) struct MergeGroup {
-  start : Int
-  end : Int
-} derive(Eq, @debug.Debug)
+  start : Int32
+  end : Int32
+}
+pub fn MergeGroup::equal(Self, Self) -> Bool
+pub fn MergeGroup::not_equal(Self, Self) -> Bool
+pub fn MergeGroup::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) struct MergePassEstimate {
-  pass : Int
+  pass : Int32
   input_runs : Int64
   output_runs : Int64
-  largest_group : Int
-} derive(Eq, @debug.Debug)
+  largest_group : Int32
+}
+pub fn MergePassEstimate::equal(Self, Self) -> Bool
+pub fn MergePassEstimate::not_equal(Self, Self) -> Bool
+pub fn MergePassEstimate::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) struct OrderViolation {
   previous_index : Int64
   current_index : Int64
   previous_key : SortValue
   current_key : SortValue
-} derive(Eq, @debug.Debug)
+}
+pub fn OrderViolation::equal(Self, Self) -> Bool
+pub fn OrderViolation::not_equal(Self, Self) -> Bool
+pub fn OrderViolation::to_repr(Self) -> @debug.Repr
 
 pub struct RunBuilder {
   config : SortConfig
   mut records : Array[SortRecord]
-  mut retained_bytes : Int
+  mut retained_bytes : Int32
   mut next_position : Int64
 }
 pub fn RunBuilder::finish(Self) -> Array[SortRecord]?
 pub fn RunBuilder::new(SortConfig, start_position? : Int64) -> Self raise SortError
 pub fn RunBuilder::next_position(Self) -> Int64
 pub fn RunBuilder::push(Self, String, String) -> Array[SortRecord]? raise SortError
-pub fn RunBuilder::retained_bytes(Self) -> Int
+pub fn RunBuilder::retained_bytes(Self) -> Int32
 
+#derive(Eq, @debug.Debug)
 pub(all) struct RunCapacityEstimate {
   worst_case_record_bytes : Int64
   records_per_run : Int64
   conservative_merge_head_bytes : Int64
   merge_heads_fit_run_budget : Bool
-} derive(Eq, @debug.Debug)
+}
+pub fn RunCapacityEstimate::equal(Self, Self) -> Bool
+pub fn RunCapacityEstimate::not_equal(Self, Self) -> Bool
+pub fn RunCapacityEstimate::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) struct RunDescriptor {
   path : String
   record_count : Int64
-} derive(Eq, @debug.Debug)
+}
+pub fn RunDescriptor::equal(Self, Self) -> Bool
+pub fn RunDescriptor::not_equal(Self, Self) -> Bool
+pub fn RunDescriptor::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) struct SortConfig {
   order : SortOrder
   key_kind : KeyKind
-  memory_budget_bytes : Int
-  max_open_runs : Int
-  max_record_bytes : Int
-} derive(Eq, @debug.Debug)
-pub fn SortConfig::new(order? : SortOrder, key_kind? : KeyKind, memory_budget_bytes? : Int, max_open_runs? : Int, max_record_bytes? : Int) -> Self raise SortError
+  memory_budget_bytes : Int32
+  max_open_runs : Int32
+  max_record_bytes : Int32
+}
+pub fn SortConfig::equal(Self, Self) -> Bool
+pub fn SortConfig::new(order? : SortOrder, key_kind? : KeyKind, memory_budget_bytes? : Int32, max_open_runs? : Int32, max_record_bytes? : Int32) -> Self raise SortError
+pub fn SortConfig::not_equal(Self, Self) -> Bool
+pub fn SortConfig::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) enum SortOrder {
   Ascending
   Descending
-} derive(Eq, @debug.Debug)
+}
+pub fn SortOrder::equal(Self, Self) -> Bool
+pub fn SortOrder::not_equal(Self, Self) -> Bool
+pub fn SortOrder::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) struct SortRecord {
   key : SortValue
   input_position : Int64
   payload : String
-} derive(Eq, @debug.Debug)
+}
+pub fn SortRecord::equal(Self, Self) -> Bool
+pub fn SortRecord::not_equal(Self, Self) -> Bool
+pub fn SortRecord::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) enum SortValue {
   TextValue(String)
   IntegerValue(Int64)
   DecimalValue(DecimalKeyValue)
-} derive(Eq, @debug.Debug)
+}
+pub fn SortValue::equal(Self, Self) -> Bool
+pub fn SortValue::not_equal(Self, Self) -> Bool
+pub fn SortValue::to_repr(Self) -> @debug.Repr
 
 pub struct SortedGroupCounter {
   config : SortConfig
@@ -251,36 +327,44 @@ pub fn SortednessVerifier::push(Self, String, String) -> Unit raise SortError
 pub fn SortednessVerifier::push_record(Self, SortRecord) -> Unit
 pub fn SortednessVerifier::report(Self) -> VerificationReport
 
+#derive(Eq, @debug.Debug)
 pub(all) struct TopKResult {
   records : Array[SortRecord]
   input_records : Int64
   discarded_records : Int64
-  retained_bytes : Int
-} derive(Eq, @debug.Debug)
+  retained_bytes : Int32
+}
+pub fn TopKResult::equal(Self, Self) -> Bool
+pub fn TopKResult::not_equal(Self, Self) -> Bool
+pub fn TopKResult::to_repr(Self) -> @debug.Repr
 
 pub struct TopKSelector {
   config : SortConfig
-  limit : Int
+  limit : Int32
   heap : Array[SortRecord]
-  mut retained_bytes : Int
+  mut retained_bytes : Int32
   mut input_records : Int64
   mut discarded_records : Int64
   mut next_position : Int64
   mut finished : Bool
 }
 pub fn TopKSelector::finish(Self) -> TopKResult raise SortError
-pub fn TopKSelector::new(SortConfig, Int, start_position? : Int64) -> Self raise SortError
+pub fn TopKSelector::new(SortConfig, Int32, start_position? : Int64) -> Self raise SortError
 pub fn TopKSelector::observed_count(Self) -> Int64
 pub fn TopKSelector::push(Self, String, String) -> Unit raise SortError
-pub fn TopKSelector::retained_bytes(Self) -> Int
-pub fn TopKSelector::retained_count(Self) -> Int
+pub fn TopKSelector::retained_bytes(Self) -> Int32
+pub fn TopKSelector::retained_count(Self) -> Int32
 
+#derive(Eq, @debug.Debug)
 pub(all) struct VerificationReport {
   records : Int64
   equal_adjacent_keys : Int64
   violation : OrderViolation?
-} derive(Eq, @debug.Debug)
+}
+pub fn VerificationReport::equal(Self, Self) -> Bool
 pub fn VerificationReport::is_sorted(Self) -> Bool
+pub fn VerificationReport::not_equal(Self, Self) -> Bool
+pub fn VerificationReport::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 

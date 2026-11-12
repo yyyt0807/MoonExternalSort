@@ -16,7 +16,7 @@ async test "native engine creates multiple Runs and publishes stable output" {
     "b payload-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\n",
     create_mode=CreateOrTruncate,
   )
-  let report = sort_file({
+  let report = @native.sort_file({
     input_path: input,
     output_path: output,
     work_directory: work,
@@ -61,7 +61,7 @@ async test "JSONL scalar selector supports descending signed integer keys" {
     create_mode=CreateOrTruncate,
   )
   ignore(
-    sort_file({
+    @native.sort_file({
       input_path: input,
       output_path: output,
       work_directory: root + "/work",
@@ -102,7 +102,7 @@ async test "CSV selector respects quoted delimiters and stable duplicate keys" {
     "2,middle,second\n",
     create_mode=CreateOrTruncate,
   )
-  let report = sort_file({
+  let report = @native.sort_file({
     input_path: input,
     output_path: output,
     work_directory: root + "/work",
@@ -145,7 +145,7 @@ async test "native engine orders decimal keys without floating point loss" {
     create_mode=CreateOrTruncate,
   )
   ignore(
-    sort_file({
+    @native.sort_file({
       input_path: input,
       output_path: output,
       work_directory: root + "/work",
@@ -231,7 +231,7 @@ async test "resume consumes only Runs committed by the manifest" {
     @sort.encode_manifest(manifest),
     create_mode=CreateOrTruncate,
   )
-  let report = resume_file(manifest_path)
+  let report = @native.resume_file(manifest_path)
   assert_true(report.recovered)
   assert_eq(@fs.read_file(output).text(), "a\nb\nc\n")
   @fs.rmdir(root, recursive=true)

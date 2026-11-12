@@ -2,13 +2,13 @@
 /// Bounded byte-oriented newline framing. It avoids an unbounded host
 /// `read_until` buffer before `max_record_bytes` can be checked.
 pub struct LineFramer {
-  max_record_bytes : Int
+  max_record_bytes : Int32
   mut pending : Array[Byte]
   mut finished : Bool
 }
 
 ///|
-pub fn LineFramer::new(max_record_bytes : Int) -> LineFramer raise SortError {
+pub fn LineFramer::new(max_record_bytes : Int32) -> LineFramer raise SortError {
   if max_record_bytes < 1 {
     raise InvalidConfig("max_record_bytes must be positive")
   }
@@ -61,6 +61,6 @@ pub fn LineFramer::finish(self : LineFramer) -> Bytes? raise SortError {
 }
 
 ///|
-pub fn LineFramer::pending_bytes(self : LineFramer) -> Int {
+pub fn LineFramer::pending_bytes(self : LineFramer) -> Int32 {
   self.pending.length()
 }

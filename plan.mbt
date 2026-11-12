@@ -1,15 +1,16 @@
 ///|
 /// One bounded Merge Group expressed as half-open Run indexes.
+#derive(Debug, Eq)
 pub(all) struct MergeGroup {
-  start : Int
-  end : Int
-} derive(Debug, Eq)
+  start : Int32
+  end : Int32
+}
 
 ///|
 /// Plan one Merge Pass without opening files or allocating record buffers.
 pub fn plan_merge_pass(
-  run_count : Int,
-  max_open_runs : Int,
+  run_count : Int32,
+  max_open_runs : Int32,
 ) -> Array[MergeGroup] raise SortError {
   if run_count < 0 {
     raise InvalidConfig("run_count must not be negative")
@@ -34,9 +35,9 @@ pub fn plan_merge_pass(
 ///|
 /// Number of Merge Passes required to reduce `run_count` Runs to one.
 pub fn merge_pass_count(
-  run_count : Int,
-  max_open_runs : Int,
-) -> Int raise SortError {
+  run_count : Int32,
+  max_open_runs : Int32,
+) -> Int32 raise SortError {
   if run_count < 0 {
     raise InvalidConfig("run_count must not be negative")
   }
@@ -51,3 +52,9 @@ pub fn merge_pass_count(
   }
   passes
 }
+
+///|
+pub extend MergeGroup with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
+pub extend MergeGroup with Eq::{not_equal, equal}

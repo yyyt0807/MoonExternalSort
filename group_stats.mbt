@@ -1,5 +1,6 @@
 ///|
 /// Constant-space statistics over adjacent equal-key groups.
+#derive(Debug, Eq)
 pub(all) struct GroupStatistics {
   records : Int64
   distinct_keys : Int64
@@ -9,7 +10,7 @@ pub(all) struct GroupStatistics {
   first_key : SortValue?
   last_key : SortValue?
   verification : VerificationReport
-} derive(Debug, Eq)
+}
 
 ///|
 /// Streaming aggregation intended for sorted output. Statistics remain useful
@@ -33,7 +34,7 @@ pub struct SortedGroupCounter {
 ///|
 pub fn SortedGroupCounter::new(
   config : SortConfig,
-  start_position? : Int64 = 0L,
+  start_position~ : Int64 = 0L,
 ) -> SortedGroupCounter raise SortError {
   if start_position < 0L {
     raise InvalidConfig("group counter start_position must not be negative")
@@ -167,3 +168,9 @@ pub fn GroupStatistics::average_group_size(self : GroupStatistics) -> Double {
     self.records.to_double() / self.distinct_keys.to_double()
   }
 }
+
+///|
+pub extend GroupStatistics with @moonbitlang/core/debug.Debug::{to_repr}
+
+///|
+pub extend GroupStatistics with Eq::{not_equal, equal}

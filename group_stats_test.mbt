@@ -1,7 +1,10 @@
 ///|
 test "group counter summarizes stable ascending text" {
-  let counter = SortedGroupCounter::new(
-    SortConfig::new(memory_budget_bytes=1024, max_record_bytes=128),
+  let counter = @external-sort.SortedGroupCounter::new(
+    @external-sort.SortConfig::new(
+      memory_budget_bytes=1024,
+      max_record_bytes=128,
+    ),
   )
   for value in ["a", "a", "a", "b", "c", "c", "d"] {
     counter.push(value, value)
@@ -21,7 +24,9 @@ test "group counter summarizes stable ascending text" {
 
 ///|
 test "empty group statistics are defined" {
-  let counter = SortedGroupCounter::new(SortConfig::new())
+  let counter = @external-sort.SortedGroupCounter::new(
+    @external-sort.SortConfig::new(),
+  )
   let stats = counter.finish()
   assert_true(stats.is_sorted())
   assert_eq(stats.records, 0L)
@@ -36,8 +41,8 @@ test "empty group statistics are defined" {
 
 ///|
 test "singleton group is counted when finishing" {
-  let counter = SortedGroupCounter::new(
-    SortConfig::new(memory_budget_bytes=256, max_record_bytes=64),
+  let counter = @external-sort.SortedGroupCounter::new(
+    @external-sort.SortConfig::new(memory_budget_bytes=256, max_record_bytes=64),
   )
   counter.push("only", "only")
   let stats = counter.finish()
@@ -49,8 +54,8 @@ test "singleton group is counted when finishing" {
 
 ///|
 test "descending decimal groups preserve exact equality" {
-  let counter = SortedGroupCounter::new(
-    SortConfig::new(
+  let counter = @external-sort.SortedGroupCounter::new(
+    @external-sort.SortConfig::new(
       order=Descending,
       key_kind=DecimalKey,
       memory_budget_bytes=512,
@@ -71,8 +76,8 @@ test "descending decimal groups preserve exact equality" {
 
 ///|
 test "group counter retains first order violation" {
-  let counter = SortedGroupCounter::new(
-    SortConfig::new(
+  let counter = @external-sort.SortedGroupCounter::new(
+    @external-sort.SortConfig::new(
       key_kind=IntegerKey,
       memory_budget_bytes=512,
       max_record_bytes=64,
@@ -94,7 +99,9 @@ test "group counter retains first order violation" {
 
 ///|
 test "record input detects unstable equal positions" {
-  let counter = SortedGroupCounter::new(SortConfig::new())
+  let counter = @external-sort.SortedGroupCounter::new(
+    @external-sort.SortConfig::new(),
+  )
   counter.push_record({
     key: TextValue("same"),
     input_position: 9L,
@@ -115,15 +122,19 @@ test "record input detects unstable equal positions" {
 ///|
 test "group counter validates lifecycle and record size" {
   try
-    SortedGroupCounter::new(SortConfig::new(), start_position=-1L) |> ignore
+    @external-sort.SortedGroupCounter::new(
+      @external-sort.SortConfig::new(),
+      start_position=-1L,
+    )
+    |> ignore
   catch {
     InvalidConfig(_) => ()
     _ => fail("unexpected start position failure")
   } noraise {
     _ => fail("expected invalid start position")
   }
-  let counter = SortedGroupCounter::new(
-    SortConfig::new(memory_budget_bytes=256, max_record_bytes=4),
+  let counter = @external-sort.SortedGroupCounter::new(
+    @external-sort.SortConfig::new(memory_budget_bytes=256, max_record_bytes=4),
   )
   try counter.push("12345", "1") catch {
     RecordTooLarge(actual~, limit~) => {

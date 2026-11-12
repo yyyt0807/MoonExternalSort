@@ -2,6 +2,9 @@
 
 MoonExternalSort is a stable, bounded-memory external sorting and multi-pass merge engine written in MoonBit. It turns UTF-8 text, delimited records, or JSONL that may exceed memory into immutable sorted Runs, merges them under an explicit file fan-in, and atomically publishes the final output.
 
+The source and CI checks were validated with the official MoonBit toolchain
+(`moon 0.1.20261104`, `moonc v0.10.20+65efd5b93`). Use this toolchain or a compatible newer release to build from source.
+
 ## Guarantees
 
 - Equal keys preserve input order in both ascending and descending jobs.

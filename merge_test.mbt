@@ -1,5 +1,9 @@
 ///|
-fn text_record(key : String, position : Int64, payload : String) -> SortRecord {
+fn text_record(
+  key : String,
+  position : Int64,
+  payload : String,
+) -> @external-sort.SortRecord {
   { key: TextValue(key), input_position: position, payload, }
 }
 
@@ -10,7 +14,7 @@ test "k-way merge preserves global ordering and stability" {
     [text_record("a", 1L, "a1"), text_record("b", 2L, "b2")],
     [],
   ]
-  let merged = merge_sorted_runs(runs, Ascending)
+  let merged = @external-sort.merge_sorted_runs(runs, Ascending)
   assert_eq(merged.map(record => record.payload), ["a0", "a1", "b2", "c3"])
 }
 
@@ -20,7 +24,7 @@ test "k-way merge supports descending keys without reversing stable ties" {
     [text_record("z", 0L, "z0"), text_record("a", 2L, "a2")],
     [text_record("z", 1L, "z1"), text_record("b", 3L, "b3")],
   ]
-  let merged = merge_sorted_runs(runs, Descending)
+  let merged = @external-sort.merge_sorted_runs(runs, Descending)
   assert_eq(merged.map(record => record.payload), ["z0", "z1", "b3", "a2"])
 }
 
@@ -39,9 +43,9 @@ test "merge result matches a directly sorted reference" {
     records[4:].to_owned(),
   ]
   for run in runs {
-    run.sort_by((a, b) => compare_records(a, b, Ascending))
+    run.sort_by((a, b) => @external-sort.compare_records(a, b, Ascending))
   }
   let reference = records.copy()
-  reference.sort_by((a, b) => compare_records(a, b, Ascending))
-  assert_eq(merge_sorted_runs(runs, Ascending), reference)
+  reference.sort_by((a, b) => @external-sort.compare_records(a, b, Ascending))
+  assert_eq(@external-sort.merge_sorted_runs(runs, Ascending), reference)
 }
